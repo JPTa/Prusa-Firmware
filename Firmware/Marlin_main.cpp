@@ -1326,17 +1326,14 @@ void setup()
 	setup_homepin();
 
 #ifdef TMC2130
-
   if (1) {
     // try to run to zero phase before powering the Z motor.    
     // Move in negative direction
-    WRITE(Z_DIR_PIN,INVERT_Z_DIR);
+    tmc2130_set_dir(Z_AXIS, 1);
     // Round the current micro-micro steps to micro steps.
     for (uint16_t phase = (tmc2130_rd_MSCNT(Z_AXIS) + 8) >> 4; phase > 0; -- phase) {
       // Until the phase counter is reset to zero.
-      WRITE(Z_STEP_PIN, !INVERT_Z_STEP_PIN);
-      _delay(2);
-      WRITE(Z_STEP_PIN, INVERT_Z_STEP_PIN);
+      tmc2130_do_step(Z_AXIS);
       _delay(2);
     }
   }
