@@ -471,6 +471,7 @@
 #define TMC2130_CURRENTS_R {16, 20, 35, 30}  // default running currents for all axes
 
 #define TMC2130_STEALTH_Z
+#define TMC2130_DEDGE_STEPPING
 
 //#define TMC2130_SERVICE_CODES_M910_M918
 
