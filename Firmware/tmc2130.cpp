@@ -689,20 +689,20 @@ static uint8_t tmc2130_rx(uint8_t axis, uint8_t addr, uint32_t* rval)
 #define _GET_PWR_Z      (READ(Z_ENABLE_PIN) == Z_ENABLE_ON)
 #define _GET_PWR_E      (READ(E0_ENABLE_PIN) == E_ENABLE_ON)
 
-#define _SET_PWR_X(ena) { WRITE(X_ENABLE_PIN, ena?X_ENABLE_ON:!X_ENABLE_ON); asm("nop"); }
-#define _SET_PWR_Y(ena) { WRITE(Y_ENABLE_PIN, ena?Y_ENABLE_ON:!Y_ENABLE_ON); asm("nop"); }
-#define _SET_PWR_Z(ena) { WRITE(Z_ENABLE_PIN, ena?Z_ENABLE_ON:!Z_ENABLE_ON); asm("nop"); }
-#define _SET_PWR_E(ena) { WRITE(E0_ENABLE_PIN, ena?E_ENABLE_ON:!E_ENABLE_ON); asm("nop"); }
+#define _SET_PWR_X(ena) WRITE(X_ENABLE_PIN, ena?X_ENABLE_ON:!X_ENABLE_ON)
+#define _SET_PWR_Y(ena) WRITE(Y_ENABLE_PIN, ena?Y_ENABLE_ON:!Y_ENABLE_ON)
+#define _SET_PWR_Z(ena) WRITE(Z_ENABLE_PIN, ena?Z_ENABLE_ON:!Z_ENABLE_ON)
+#define _SET_PWR_E(ena) WRITE(E0_ENABLE_PIN, ena?E_ENABLE_ON:!E_ENABLE_ON)
 
 #define _GET_DIR_X      (READ(X_DIR_PIN) == INVERT_X_DIR)
 #define _GET_DIR_Y      (READ(Y_DIR_PIN) == INVERT_Y_DIR)
 #define _GET_DIR_Z      (READ(Z_DIR_PIN) == INVERT_Z_DIR)
 #define _GET_DIR_E      (READ(E0_DIR_PIN) == INVERT_E0_DIR)
 
-#define _SET_DIR_X(dir) { WRITE(X_DIR_PIN, dir?INVERT_X_DIR:!INVERT_X_DIR); asm("nop"); }
-#define _SET_DIR_Y(dir) { WRITE(Y_DIR_PIN, dir?INVERT_Y_DIR:!INVERT_Y_DIR); asm("nop"); }
-#define _SET_DIR_Z(dir) { WRITE(Z_DIR_PIN, dir?INVERT_Z_DIR:!INVERT_Z_DIR); asm("nop"); }
-#define _SET_DIR_E(dir) { WRITE(E0_DIR_PIN, dir?INVERT_E0_DIR:!INVERT_E0_DIR); asm("nop"); }
+#define _SET_DIR_X(dir) WRITE(X_DIR_PIN, dir?INVERT_X_DIR:!INVERT_X_DIR)
+#define _SET_DIR_Y(dir) WRITE(Y_DIR_PIN, dir?INVERT_Y_DIR:!INVERT_Y_DIR)
+#define _SET_DIR_Z(dir) WRITE(Z_DIR_PIN, dir?INVERT_Z_DIR:!INVERT_Z_DIR)
+#define _SET_DIR_E(dir) WRITE(E0_DIR_PIN, dir?INVERT_E0_DIR:!INVERT_E0_DIR)
 
 #ifdef TMC2130_DEDGE_STEPPING
 #define _DO_STEP_X      TOGGLE(X_STEP_PIN)
@@ -755,6 +755,7 @@ void tmc2130_set_pwr(uint8_t axis, uint8_t pwr)
 	case Z_AXIS: _SET_PWR_Z(pwr); break;
 	case E_AXIS: _SET_PWR_E(pwr); break;
 	}
+    delayMicroseconds(TMC2130_SET_PWR_DELAY);
 }
 
 uint8_t tmc2130_get_inv(uint8_t axis)
@@ -791,6 +792,7 @@ void tmc2130_set_dir(uint8_t axis, uint8_t dir)
 	case Z_AXIS: _SET_DIR_Z(dir); break;
 	case E_AXIS: _SET_DIR_E(dir); break;
 	}
+    delayMicroseconds(TMC2130_SET_DIR_DELAY);
 }
 
 void tmc2130_do_step(uint8_t axis)
@@ -806,8 +808,8 @@ void tmc2130_do_step(uint8_t axis)
 
 void tmc2130_do_steps(uint8_t axis, uint16_t steps, uint8_t dir, uint16_t delay_us)
 {
-	tmc2130_set_dir(axis, dir);
-	delayMicroseconds(100);
+    if (tmc2130_get_dir(axis) != dir)
+        tmc2130_set_dir(axis, dir);
 	while (steps--)
 	{
 		tmc2130_do_step(axis);
@@ -838,7 +840,6 @@ void tmc2130_goto_step(uint8_t axis, uint8_t step, uint8_t dir, uint16_t delay_u
 		cnt = steps;
 	}
 	tmc2130_set_dir(axis, dir);
-	delayMicroseconds(100);
 	mscnt = tmc2130_rd_MSCNT(axis);
 	while ((cnt--) && ((mscnt >> shift) != step))
 	{
