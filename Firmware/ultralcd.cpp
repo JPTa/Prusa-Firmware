@@ -3141,7 +3141,7 @@ static void _lcd_babystep(int axis, const char *msg)
 
 	if (lcd_encoder != 0) 
 	{
-		if (homing_flag) lcd_encoder = 0;
+		if (homing_flag || mesh_bed_leveling_flag) lcd_encoder = 0;
 		_md->babystepMem[axis] += (int)lcd_encoder;
 		if (axis == 2)
 		{
@@ -5457,7 +5457,7 @@ static void lcd_settings_menu()
 		MENU_ITEM_FUNCTION_P(_i("RPi port     [on]"), lcd_second_serial_set);////MSG_SECOND_SERIAL_ON c=17 r=1
 #endif //HAS_SECOND_SERIAL
 
-	if (!isPrintPaused && !homing_flag)
+	if (!isPrintPaused && !homing_flag && !mesh_bed_leveling_flag)
 		MENU_ITEM_SUBMENU_P(_T(MSG_BABYSTEP_Z), lcd_babystep_z);
 
 #if (LANG_MODE != 0)
