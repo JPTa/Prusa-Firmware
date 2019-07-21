@@ -3179,7 +3179,11 @@ void gcode_M701()
 		st_synchronize();
 
 		marlin_rise_z();
+#ifdef SKELESTRUDER
+		current_position[E_AXIS] += 20;
+#else
 		current_position[E_AXIS] += 30;
+#endif
 		plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 400 / 60, active_extruder); //fast sequence
 		
 		load_filament_final_feed(); //slow sequence

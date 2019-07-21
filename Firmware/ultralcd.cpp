@@ -6048,10 +6048,19 @@ void unload_filament()
 	lcd_setstatuspgm(_T(MSG_UNLOADING_FILAMENT));
 
 	//		extr_unload2();
-
+#ifdef SKELESTRUDER
+	current_position[E_AXIS] += 5;
+	plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 500 / 60, active_extruder);
+	st_synchronize();
+#endif
 	current_position[E_AXIS] -= 45;
 	plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 5200 / 60, active_extruder);
 	st_synchronize();
+#ifdef SKELESTRUDER
+	current_position[E_AXIS] += 10;
+	plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 500 / 60, active_extruder);
+	st_synchronize();
+#endif
 	current_position[E_AXIS] -= 15;
 	plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 1000 / 60, active_extruder);
 	st_synchronize();
