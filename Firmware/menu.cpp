@@ -11,12 +11,11 @@
 #include "ultralcd.h"
 #include "language.h"
 #include "static_assert.h"
-
-
+#include "sound.h"
 
 extern int32_t lcd_encoder;
 
-#define MENU_DEPTH_MAX       6
+#define MENU_DEPTH_MAX       7
 
 static menu_record_t menu_stack[MENU_DEPTH_MAX];
 
@@ -65,7 +64,11 @@ void menu_goto(menu_func_t menu, const uint32_t encoder, const bool feedback, bo
 void menu_start(void)
 {
     if (lcd_encoder > 0x8000) lcd_encoder = 0;
-    if (lcd_encoder < 0) lcd_encoder = 0;
+    if (lcd_encoder < 0)
+    {
+        lcd_encoder = 0;
+		Sound_MakeSound(e_SOUND_TYPE_BlindAlert);
+    }
     if (lcd_encoder < menu_top)
 		menu_top = lcd_encoder;
     menu_line = menu_top;
@@ -75,7 +78,10 @@ void menu_start(void)
 void menu_end(void)
 {
 	if (lcd_encoder >= menu_item)
+	{
 		lcd_encoder = menu_item - 1;
+		Sound_MakeSound(e_SOUND_TYPE_BlindAlert);
+	}
 	if (((uint8_t)lcd_encoder) >= menu_top + LCD_HEIGHT)
 	{
 		menu_top = lcd_encoder - LCD_HEIGHT + 1;
@@ -168,16 +174,81 @@ int menu_draw_item_printf_P(char type_char, const char* format, ...)
 }
 */
 
+static char menu_selection_mark(){
+	return (lcd_encoder == menu_item)?'>':' ';
+}
+
 static void menu_draw_item_puts_P(char type_char, const char* str)
 {
     lcd_set_cursor(0, menu_row);
-    lcd_printf_P(PSTR("%c%-18.18S%c"), (lcd_encoder == menu_item)?'>':' ', str, type_char);
+    lcd_printf_P(PSTR("%c%-18.18S%c"), menu_selection_mark(), str, type_char);
+}
+
+static void menu_draw_toggle_puts_P(const char* str, const char* toggle, const uint8_t settings)
+{
+    //settings:
+    //xxxxxcba
+    //a = selection mark. If it's set(1), then '>' will be used as the first character on the line. Else leave blank
+    //b = toggle string is from progmem
+    //c = do not set cursor at all. Must be handled externally.
+    char lineStr[LCD_WIDTH + 1];
+    const char eol = (toggle == NULL)?LCD_STR_ARROW_RIGHT[0]:' ';
+    if (toggle == NULL) toggle = _T(MSG_NA);
+    sprintf_P(lineStr, PSTR("%c%-18.18S"), (settings & 0x01)?'>':' ', str);
+    sprintf_P(lineStr + LCD_WIDTH - ((settings & 0x02)?strlen_P(toggle):strlen(toggle)) - 3, (settings & 0x02)?PSTR("[%S]%c"):PSTR("[%s]%c"), toggle, eol);
+    if (!(settings & 0x04)) lcd_set_cursor(0, menu_row);
+    fputs(lineStr, lcdout);
+}
+
+//! @brief Format sheet name
+//!
+//! @param[in] sheet_E Sheet in EEPROM
+//! @param[out] buffer for formatted output
+void menu_format_sheet_E(const Sheet &sheet_E, SheetFormatBuffer &buffer)
+{
+    uint_least8_t index = sprintf_P(buffer.c, PSTR("%.10S "), _T(MSG_SHEET));
+    eeprom_read_block(&(buffer.c[index]), sheet_E.name, 7);
+    //index += 7;
+    buffer.c[index + 7] = '\0';
+}
+
+//! @brief Format sheet name in select menu
+//!
+//! @param[in] sheet_E Sheet in EEPROM
+//! @param[out] buffer for formatted output
+void menu_format_sheet_select_E(const Sheet &sheet_E, SheetFormatBuffer &buffer)
+{
+    uint_least8_t index = sprintf_P(buffer.c,PSTR("%-9.9S["), _T(MSG_SHEET));
+    eeprom_read_block(&(buffer.c[index]), sheet_E.name, sizeof(sheet_E.name)/sizeof(sheet_E.name[0]));
+    for (const uint_least8_t start = index; static_cast<uint_least8_t>(index - start) < sizeof(sheet_E.name)/sizeof(sheet_E.name[0]); ++index)
+    {
+        if (buffer.c[index] == '\0') break;
+    }
+	buffer.c[index] = ']';
+    buffer.c[index + 1] = '\0';
+}
+
+static void menu_draw_item_select_sheet_E(char type_char, const Sheet &sheet)
+{
+    lcd_set_cursor(0, menu_row);
+    SheetFormatBuffer buffer;
+    menu_format_sheet_select_E(sheet, buffer);
+    lcd_printf_P(PSTR("%c%-18.18s%c"), menu_selection_mark(), buffer.c, type_char);
+}
+
+
+static void menu_draw_item_puts_E(char type_char, const Sheet &sheet)
+{
+    lcd_set_cursor(0, menu_row);
+    SheetFormatBuffer buffer;
+    menu_format_sheet_E(sheet, buffer);
+    lcd_printf_P(PSTR("%c%-18.18s%c"), menu_selection_mark(), buffer.c, type_char);
 }
 
 static void menu_draw_item_puts_P(char type_char, const char* str, char num)
 {
     lcd_set_cursor(0, menu_row);
-    lcd_printf_P(PSTR("%c%-.16S "), (lcd_encoder == menu_item)?'>':' ', str);
+    lcd_printf_P(PSTR("%c%-.16S "), menu_selection_mark(), str);
     lcd_putc(num);
     lcd_set_cursor(19, menu_row);
     lcd_putc(type_char);
@@ -222,6 +293,40 @@ uint8_t menu_item_submenu_P(const char* str, menu_func_t submenu)
 	}
 	menu_item++;
 	return 0;
+}
+
+uint8_t menu_item_submenu_E(const Sheet &sheet, menu_func_t submenu)
+{
+    if (menu_item == menu_line)
+    {
+        if (lcd_draw_update) menu_draw_item_puts_E(LCD_STR_ARROW_RIGHT[0], sheet);
+        if (menu_clicked && (lcd_encoder == menu_item))
+        {
+            menu_submenu(submenu);
+            return menu_item_ret();
+        }
+    }
+    menu_item++;
+    return 0;
+}
+
+uint8_t menu_item_function_E(const Sheet &sheet, menu_func_t func)
+{
+    if (menu_item == menu_line)
+    {
+        if (lcd_draw_update) menu_draw_item_select_sheet_E(' ', sheet);
+        if (menu_clicked && (lcd_encoder == menu_item))
+        {
+            menu_clicked = false;
+            lcd_consume_click();
+            lcd_update_enabled = 0;
+            if (func) func();
+            lcd_update_enabled = 1;
+            return menu_item_ret();
+        }
+    }
+    menu_item++;
+    return 0;
 }
 
 uint8_t menu_item_back_P(const char* str)
@@ -286,6 +391,33 @@ uint8_t menu_item_function_P(const char* str, char number, void (*func)(uint8_t)
     return 0;
 }
 
+uint8_t menu_item_toggle_P(const char* str, const char* toggle, menu_func_t func, const uint8_t settings)
+{
+	if (menu_item == menu_line)
+	{
+		if (lcd_draw_update) menu_draw_toggle_puts_P(str, toggle, settings | (menu_selection_mark()=='>'));
+		if (menu_clicked && (lcd_encoder == menu_item))
+		{
+			if (toggle == NULL) // print N/A warning message
+			{
+				menu_submenu(func);
+				return menu_item_ret();
+			}
+			else // do the actual toggling
+			{
+				menu_clicked = false;
+				lcd_consume_click();
+				lcd_update_enabled = 0;
+				if (func) func();
+				lcd_update_enabled = 1;
+				return menu_item_ret();
+			}
+		}
+	}
+	menu_item++;
+	return 0;
+}
+
 uint8_t menu_item_gcode_P(const char* str, const char* str_gcode)
 {
 	if (menu_item == menu_line)
@@ -301,16 +433,11 @@ uint8_t menu_item_gcode_P(const char* str, const char* str_gcode)
 	return 0;
 }
 
-
-const char menu_20x_space[] PROGMEM = "                    ";
-
 const char menu_fmt_int3[] PROGMEM = "%c%.15S:%s%3d";
 
 const char menu_fmt_float31[] PROGMEM = "%-12.12S%+8.1f";
 
 const char menu_fmt_float13[] PROGMEM = "%c%-13.13S%+5.3f";
-
-const char menu_fmt_float13off[] PROGMEM = "%c%-13.13S%6.6s";
 
 template<typename T>
 static void menu_draw_P(char chr, const char* str, int16_t val);
@@ -320,8 +447,8 @@ void menu_draw_P<int16_t*>(char chr, const char* str, int16_t val)
 {
 	int text_len = strlen_P(str);
 	if (text_len > 15) text_len = 15;
-	char spaces[21];
-	strcpy_P(spaces, menu_20x_space);
+	char spaces[LCD_WIDTH + 1] = {0};
+    memset(spaces,' ', LCD_WIDTH);
 	if (val <= -100) spaces[15 - text_len - 1] = 0;
 	else spaces[15 - text_len] = 0;
 	lcd_printf_P(menu_fmt_int3, chr, str, spaces, val);
@@ -334,7 +461,7 @@ void menu_draw_P<uint8_t*>(char chr, const char* str, int16_t val)
     float factor = 1.0f + static_cast<float>(val) / 1000.0f;
     if (val <= _md->minEditValue)
     {
-        lcd_printf_P(menu_fmt_float13off, chr, str, " [off]");
+        menu_draw_toggle_puts_P(str, _T(MSG_OFF), 0x04 | 0x02 | (chr=='>'));
     }
     else
     {
@@ -399,7 +526,7 @@ uint8_t menu_item_edit_P(const char* str, T pval, int16_t min_val, int16_t max_v
 		if (lcd_draw_update) 
 		{
 			lcd_set_cursor(0, menu_row);
-			menu_draw_P<T>((lcd_encoder == menu_item)?'>':' ', str, *pval);
+			menu_draw_P<T>(menu_selection_mark(), str, *pval);
 		}
 		if (menu_clicked && (lcd_encoder == menu_item))
 		{

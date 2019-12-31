@@ -1,14 +1,42 @@
 #ifndef EEPROM_H
 #define EEPROM_H
 
+#include <stdint.h>
+
+#define MAX_SHEETS 8
+#define MAX_SHEET_NAME_LENGTH 7
+
+typedef struct
+{
+    char name[MAX_SHEET_NAME_LENGTH]; //!< Can be null terminated, doesn't need to be null terminated
+    int16_t z_offset; //!< Z_BABYSTEP_MIN .. Z_BABYSTEP_MAX = Z_BABYSTEP_MIN*2/1000 [mm] .. Z_BABYSTEP_MAX*2/1000 [mm]
+    uint8_t bed_temp; //!< 0 .. 254 [°C]
+    uint8_t pinda_temp; //!< 0 .. 254 [°C]
+} Sheet;
+
+typedef struct
+{
+    Sheet s[MAX_SHEETS];
+    uint8_t active_sheet;
+} Sheets;
+// sizeof(Sheets). Do not change it unless EEPROM_Sheets_base is last item in EEPROM.
+// Otherwise it would move following items.
+#define EEPROM_SHEETS_SIZEOF 89
+
+#ifdef __cplusplus
+static_assert(sizeof(Sheets) == EEPROM_SHEETS_SIZEOF, "Sizeof(Sheets) is not EEPROM_SHEETS_SIZEOF.");
+#endif
+
+#define EEPROM_EMPTY_VALUE 0xFF
+#define EEPROM_EMPTY_VALUE16 0xFFFF
 // The total size of the EEPROM is
 // 4096 for the Atmega2560
 #define EEPROM_TOP 4096
 #define EEPROM_SILENT 4095
 #define EEPROM_LANG 4094
-#define EEPROM_BABYSTEP_X 4092
-#define EEPROM_BABYSTEP_Y 4090
-#define EEPROM_BABYSTEP_Z 4088
+#define EEPROM_BABYSTEP_X 4092 //unused
+#define EEPROM_BABYSTEP_Y 4090 //unused
+#define EEPROM_BABYSTEP_Z 4088 //legacy, multiple values stored now in EEPROM_Sheets_base
 #define EEPROM_CALIBRATION_STATUS 4087
 #define EEPROM_BABYSTEP_Z0 4085
 #define EEPROM_FILAMENTUSED 4081
@@ -46,7 +74,7 @@
 #define EEPROM_UVLO_CURRENT_POSITION_Z	(EEPROM_FILE_POSITION - 4) //float for current position in Z
 #define EEPROM_UVLO_TARGET_HOTEND		(EEPROM_UVLO_CURRENT_POSITION_Z - 1)
 #define EEPROM_UVLO_TARGET_BED			(EEPROM_UVLO_TARGET_HOTEND - 1)
-#define EEPROM_UVLO_FEEDRATE			(EEPROM_UVLO_TARGET_BED - 2)
+#define EEPROM_UVLO_FEEDRATE			(EEPROM_UVLO_TARGET_BED - 2) //uint16_t
 #define EEPROM_UVLO_FAN_SPEED			(EEPROM_UVLO_FEEDRATE - 1) 
 #define EEPROM_FAN_CHECK_ENABLED		(EEPROM_UVLO_FAN_SPEED - 1)
 #define EEPROM_UVLO_MESH_BED_LEVELING     (EEPROM_FAN_CHECK_ENABLED - 9*2)
@@ -166,12 +194,28 @@
 #define EEPROM_CHECK_MODE (EEPROM_MMU_STEALTH-1) // uint8
 #define EEPROM_NOZZLE_DIAMETER (EEPROM_CHECK_MODE-1) // uint8
 #define EEPROM_NOZZLE_DIAMETER_uM (EEPROM_NOZZLE_DIAMETER-2) // uint16
-#define EEPROM_UVLO_LA_K (EEPROM_NOZZLE_DIAMETER_uM-4) // float
+#define EEPROM_CHECK_MODEL (EEPROM_NOZZLE_DIAMETER_uM-1) // uint8
+#define EEPROM_CHECK_VERSION (EEPROM_CHECK_MODEL-1) // uint8
+#define EEPROM_CHECK_GCODE (EEPROM_CHECK_VERSION-1) // uint8
+
+#define EEPROM_SHEETS_BASE (EEPROM_CHECK_GCODE - EEPROM_SHEETS_SIZEOF) // Sheets
+static Sheets * const EEPROM_Sheets_base = (Sheets*)(EEPROM_SHEETS_BASE);
+
+#define EEPROM_FSENSOR_PCB (EEPROM_SHEETS_BASE-1) // uint8
+#define EEPROM_FSENSOR_ACTION_NA (EEPROM_FSENSOR_PCB-1) // uint8
+
+#define EEPROM_UVLO_SAVED_TARGET (EEPROM_FSENSOR_ACTION_NA - 4*4) // 4 x float for saved target for all axes
+#define EEPROM_UVLO_FEEDMULTIPLY (EEPROM_UVLO_SAVED_TARGET - 2) // uint16_t for feedmultiply
+
+#define EEPROM_BACKLIGHT_LEVEL_HIGH (EEPROM_UVLO_FEEDMULTIPLY-1) // uint8
+#define EEPROM_BACKLIGHT_LEVEL_LOW (EEPROM_BACKLIGHT_LEVEL_HIGH-1) // uint8
+#define EEPROM_BACKLIGHT_MODE (EEPROM_BACKLIGHT_LEVEL_LOW-1) // uint8
+#define EEPROM_BACKLIGHT_TIMEOUT (EEPROM_BACKLIGHT_MODE-2) // uint16
+
+#define EEPROM_UVLO_LA_K (EEPROM_BACKLIGHT_TIMEOUT-4) // float
 
 //This is supposed to point to last item to allow EEPROM overrun check. Please update when adding new items.
 #define EEPROM_LAST_ITEM EEPROM_UVLO_LA_K
-
-
 // !!!!!
 // !!!!! this is end of EEPROM section ... all updates MUST BE inserted before this mark !!!!!
 // !!!!!
@@ -191,7 +235,7 @@
 #ifdef __cplusplus
 #include "ConfigurationStore.h"
 static_assert(EEPROM_FIRMWARE_VERSION_END < 20, "Firmware version EEPROM address conflicts with EEPROM_M500_base");
-static M500_conf * const EEPROM_M500_base = reinterpret_cast<M500_conf*>(20); //offset for storing settings using M500
+static constexpr M500_conf * const EEPROM_M500_base = reinterpret_cast<M500_conf*>(20); //offset for storing settings using M500
 static_assert(((sizeof(M500_conf) + 20) < EEPROM_LAST_ITEM), "M500_conf address space conflicts with previous items.");
 #endif
 
@@ -201,5 +245,16 @@ enum
     EEPROM_MMU_CUTTER_ENABLED_always = 2,
 };
 
+#ifdef __cplusplus
+void eeprom_init();
+bool eeprom_is_sheet_initialized(uint8_t sheet_num);
+struct SheetName
+{
+    char c[sizeof(Sheet::name) + 1];
+};
+void eeprom_default_sheet_name(uint8_t index, SheetName &sheetName);
+int8_t eeprom_next_initialized_sheet(int8_t sheet);
+void eeprom_switch_to_next_sheet();
+#endif
 
 #endif // EEPROM_H

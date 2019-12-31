@@ -335,10 +335,6 @@ FORCE_INLINE void stepper_next_block()
 	}
 #endif
 
-#ifdef FILAMENT_SENSOR
-	fsensor_counter = 0;
-	fsensor_st_block_begin(count_direction[E_AXIS] < 0);
-#endif //FILAMENT_SENSOR
     // The busy flag is set by the plan_get_current_block() call.
     // current_block->busy = true;
     // Initializes the trapezoid generator from the current block. Called whenever a new
@@ -421,6 +417,10 @@ FORCE_INLINE void stepper_next_block()
 #endif /* LIN_ADVANCE */
       count_direction[E_AXIS] = 1;
     }
+#ifdef FILAMENT_SENSOR
+	fsensor_counter = 0;
+	fsensor_st_block_begin(count_direction[E_AXIS] < 0);
+#endif //FILAMENT_SENSOR
   }
   else {
       _NEXT_ISR(2000); // 1kHz.
@@ -1176,6 +1176,9 @@ void st_init()
       SET_OUTPUT(Z2_STEP_PIN);
       WRITE(Z2_STEP_PIN,INVERT_Z_STEP_PIN);
     #endif
+    #ifdef PSU_Delta
+      init_force_z();
+    #endif // PSU_Delta
     disable_z();
   #endif
   #if defined(E0_STEP_PIN) && (E0_STEP_PIN > -1)
@@ -1463,10 +1466,10 @@ void EEPROM_read_st(int pos, uint8_t* value, uint8_t size)
 
 
 void st_current_init() //Initialize Digipot Motor Current
-{  
-uint8_t SilentMode = eeprom_read_byte((uint8_t*)EEPROM_SILENT);
+{
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
+  uint8_t SilentMode = eeprom_read_byte((uint8_t*)EEPROM_SILENT);
   SilentModeMenu = SilentMode;
-  #ifdef MOTOR_CURRENT_PWM_XY_PIN
     pinMode(MOTOR_CURRENT_PWM_XY_PIN, OUTPUT);
     pinMode(MOTOR_CURRENT_PWM_Z_PIN, OUTPUT);
     pinMode(MOTOR_CURRENT_PWM_E_PIN, OUTPUT);
@@ -1488,7 +1491,7 @@ uint8_t SilentMode = eeprom_read_byte((uint8_t*)EEPROM_SILENT);
     st_current_set(2, motor_current_setting[2]);
     //Set timer5 to 31khz so the PWM of the motor power is as constant as possible. (removes a buzzing noise)
     TCCR5B = (TCCR5B & ~(_BV(CS50) | _BV(CS51) | _BV(CS52))) | _BV(CS50);
-  #endif
+#endif
 }
 
 

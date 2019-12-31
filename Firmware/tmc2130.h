@@ -12,7 +12,7 @@ extern uint8_t tmc2130_mres[4];
 
 //flags for axis stall detection
 extern uint8_t tmc2130_sg_thr[4];
-extern uint8_t tmc2130_sg_thr_home[4]; // kuo added
+extern uint8_t tmc2130_sg_thr_home[4]; //Kuo added separate settings for homing
 
 extern bool tmc2130_sg_stop_on_crash;
 extern uint8_t tmc2130_sg_crash; //crash mask
@@ -26,7 +26,7 @@ extern uint8_t tmc2130_sg_homing_axes_mask;
 #define TMC2130_MODE_NORMAL 0
 #define TMC2130_MODE_SILENT 1
 
-#define TMC2130_WAVE_FAC1000_MIN  10 //Kuo reduce min limit (prusa min was 30)
+#define TMC2130_WAVE_FAC1000_MIN  30
 #define TMC2130_WAVE_FAC1000_MAX 200
 #define TMC2130_WAVE_FAC1000_STP   1
 
@@ -52,7 +52,11 @@ typedef struct
 extern tmc2130_chopper_config_t tmc2130_chopper_config[4];
 
 //initialize tmc2130
+#ifdef PSU_Delta
+extern void tmc2130_init(bool bSupressFlag=false);
+#else
 extern void tmc2130_init();
+#endif
 //check diag pins (called from stepper isr)
 extern void tmc2130_st_isr();
 //update stall guard (called from st_synchronize inside the loop)
