@@ -88,12 +88,12 @@
 //Don't forget to also send gcode to set e-steps as detailed earlier
 //Reversion back from geared extruder requires sending M92 E280 & M500 to printer
 //
-//#define SKELESTRUDER // Uncomment if you have a skelestruder. Applies the patches for load distances and Z height.
+//#define SKELESTRUDER // Uncomment if you have a 3.5 ratio Skelestruder. Also applies the patches for load distances and Z height.
 //#define BONDTECH_PRUSA_UPGRADE_MK3 //Kuo Uncomment for Bondtech MK3 extruder upgrade. 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define BONDTECH_PRUSA_UPGRADE_MK3S //Kuo Uncomment for Bondtech MK3S extruder upgrade. (Note the S!!!!) 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define EXTRUDER_GEARRATIO_30 //Kuo Uncomment for extruder with gear ratio 3.0. 
 //#define EXTRUDER_GEARRATIO_3375 //Kuo Uncomment for extruder with gear ratio 3.375 like 54:16 BNBSX.
-//#define EXTRUDER_GEARRATIO_35 //Kuo Uncomment for extruder with gear ratio 3.5 like 56:16 Bunny and Bear Short Ears or Skelestruder.
+//#define EXTRUDER_GEARRATIO_35 //Kuo Uncomment for extruder with gear ratio 3.5 like 56:16 Bunny and Bear Short Ears.
 
 //====== Kuo E3D Volcano Support
 //#define E3D_VOLCANO //uncomment to adjust Z_MAX_POS to accomodate 8.5 mm greater Volcano extruder height
@@ -118,22 +118,28 @@
 // Steps per unit {X,Y,Z,E}
 
 #ifdef SKELESTRUDER
-  #define DEFAULT_AXIS_STEPS_PER_UNIT   {100,100,3200/8,420} //Skelestruder 3.0 geared extruder 
+  #define DEFAULT_AXIS_STEPS_PER_UNIT   {100,100,3200/8,490} //Skelestruder 3.5 geared extruder 
+  #define EXTRUDER_GEARED
   
 #elif defined(BONDTECH_PRUSA_UPGRADE_MK3)
   #define DEFAULT_AXIS_STEPS_PER_UNIT   {100,100,3200/8,415} //Bondtech upgrade MK3 approx 3:1 geared extruder
- 
+  #define EXTRUDER_GEARED
+  
 #elif defined(BONDTECH_PRUSA_UPGRADE_MK3S)
   #define DEFAULT_AXIS_STEPS_PER_UNIT   {100,100,3200/8,415} //Bondtech upgrade MK3S (Note the S!!!!) approx 3:1 geared extruder
-
+  #define EXTRUDER_GEARED
+  
 #elif defined(EXTRUDER_GEARRATIO_30)
   #define DEFAULT_AXIS_STEPS_PER_UNIT   {100,100,3200/8,420} //3.0 geared extruder 
+  #define EXTRUDER_GEARED
 
 #elif defined(EXTRUDER_GEARRATIO_3375)
   #define DEFAULT_AXIS_STEPS_PER_UNIT   {100,100,3200/8,473} //3.375 geared extruder like 54:16 BNBSX
+  #define EXTRUDER_GEARED
 
 #elif defined(EXTRUDER_GEARRATIO_35)
   #define DEFAULT_AXIS_STEPS_PER_UNIT   {100,100,3200/8,490} //3.5 geared extruder like 56:16 BNBSX
+  #define EXTRUDER_GEARED
 
 #else
   #define DEFAULT_AXIS_STEPS_PER_UNIT   {100,100,3200/8,280} //default steps/unit e-axis
@@ -162,18 +168,18 @@
 #define X_MIN_POS 0
 #define Y_MAX_POS 212.5
 #define Y_MIN_POS -4 //orig -4
-#if defined(SKELESTRUDER) && !defined(E3D_VOLCANO) //kuo Skelestruder height
-  #define Z_MAX_POS 220
+#ifdef SKELESTRUDER //kuo Skelestruder height
+  #if defined(E3D_VOLCANO)
+    #define Z_MAX_POS 212
+  #else
+    #define Z_MAX_POS 220
+  #endif
 #elif defined(BONDTECH_PRUSA_UPGRADE_MK3) //kuo BMG height
   #define Z_MAX_POS 205
 #elif defined(BONDTECH_PRUSA_UPGRADE_MK3S)//kuo BMG height
   #define Z_MAX_POS 205
 #elif defined(E3D_VOLCANO)//kuo Volcano height
-  #ifdef SKELESTRUDER
-    #define Z_MAX_POS 205
-  #else
-    #define Z_MAX_POS 202
-  #endif
+  #define Z_MAX_POS 202
 #else
   #define Z_MAX_POS 210 //default height
 #endif
@@ -204,8 +210,9 @@
   #define HOMING_FEEDRATE_Y 3000
 #endif
 
-#define HOMING_FEEDRATE {HOMING_FEEDRATE_X, HOMING_FEEDRATE_Y, 800, 0}  // use feedrates needed for reliable X AND Y 0.9 degree motor stallGuard
-//Kuo ===
+#define HOMING_FEEDRATE {HOMING_FEEDRATE_X, HOMING_FEEDRATE_Y, 800, 0}  //Kuo use defined feedrates for reliable X AND Y 0.9 degree motor stallGuard
+//#define HOMING_FEEDRATE {3000, 3000, 800, 0}  // set the homing speeds (mm/min) // 3000 is also valid for stallGuard homing. Valid range: 2200 - 3000
+
 
 //#define DEFAULT_Y_OFFSET    4.f // Default distance of Y_MIN_POS point from endstop, when the printer is not calibrated.
 /**
@@ -362,13 +369,13 @@
   #else
     #define TMC2130_USTEPS_E 8 // Kuo 0.9 motor, geared extruder
   #endif
-#endif //Kuo ===
+#endif //Kuo ========
 
 #define TMC2130_INTPOL_XY   1         // extrapolate 256 for XY axes
 #define TMC2130_INTPOL_Z    1         // extrapolate 256 for Z axis
 #define TMC2130_INTPOL_E    1         // extrapolate 256 for E axis
 
-//Kuo TMC2130_PWM_GRAD & TMC2130_PWM_AMP tuned for 09 motor.
+///Kuo TMC2130_PWM_GRAD & TMC2130_PWM_AMP tuned for 09 motor.
 //Better axis motion control with lower TMC2130_PWM_GRAD 2,3,4 but can squeak during fast declerations.
 //TMC2130_PWM_GRAD too high causes y-layer shifts
 //TMC2130_PWM_GRAD_Y 4 is reasonable choice on Y. 
@@ -526,7 +533,6 @@
 //new settings is possible for vsense = 1, running current value > 31 set vsense to zero and shift both currents by 1 bit right (Z axis only)
 #define TMC2130_CURRENTS_H {16, 20, 35, 30}  // default holding currents for all axes
 #define TMC2130_CURRENTS_R {16, 20, 35, 30}  // default running currents for all axes
-#define TMC2130_UNLOAD_CURRENT_R 12			 // lower current for M600 to protect filament sensor 
 
 #define TMC2130_STEALTH_Z
 
