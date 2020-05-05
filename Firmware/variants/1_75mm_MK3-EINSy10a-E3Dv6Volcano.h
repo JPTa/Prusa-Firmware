@@ -169,7 +169,7 @@
 #define Y_MIN_POS -4 //orig -4
 #ifdef SKELESTRUDER //kuo Skelestruder height
   #if defined(E3D_VOLCANO)
-    #define Z_MAX_POS 210
+    #define Z_MAX_POS 207
   #else
     #define Z_MAX_POS 220
   #endif
