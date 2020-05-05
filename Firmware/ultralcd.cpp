@@ -1005,7 +1005,7 @@ void lcd_status_screen()                          // NOT static due to using ins
 
 	if (lcd_draw_update)
 	{
-#ifdef HAS_OLED_SCREEN // JTa: Fix flickering with OLED screen
+#ifndef HAS_OLED_SCREEN // JTa: Fix flickering with OLED screen
 		ReInitLCD++;
 		if (ReInitLCD == 30)
 		{
