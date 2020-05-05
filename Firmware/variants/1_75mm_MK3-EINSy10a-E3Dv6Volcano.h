@@ -81,7 +81,7 @@
 #define X_AXIS_MOTOR_09 //kuo exper X axis
 #define Y_AXIS_MOTOR_09 //kuo exper Y axis
 //#define Z_AXIS_MOTOR_09 //kuo exper Z axis
-//#define E_AXIS_MOTOR_09 //kuo exper EXTRUDER
+#define E_AXIS_MOTOR_09 //kuo exper EXTRUDER
 
 //====== Kuo Uncomment ONLY ONE or NONE of below for geared extruders
 //Don't forget to also send gcode to set e-steps as detailed earlier
@@ -163,13 +163,13 @@
 #define MANUAL_Z_HOME_POS 0.2
 
 // Travel limits after homing
-#define X_MAX_POS 250 // JTa: Bear X shorter?
+#define X_MAX_POS 255
 #define X_MIN_POS 0
 #define Y_MAX_POS 212.5
 #define Y_MIN_POS -4 //orig -4
 #ifdef SKELESTRUDER //kuo Skelestruder height
   #if defined(E3D_VOLCANO)
-    #define Z_MAX_POS 212
+    #define Z_MAX_POS 210
   #else
     #define Z_MAX_POS 220
   #endif
