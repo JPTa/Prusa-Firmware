@@ -6,6 +6,9 @@
 #include "conv2str.h"
 #include "menu.h"
 #include "mesh_bed_calibration.h"
+#include "config.h"
+
+#include "config.h"
 
 extern void menu_lcd_longpress_func(void);
 extern void menu_lcd_charsetup_func(void);
@@ -47,12 +50,20 @@ unsigned char lcd_choose_color();
 void lcd_load_filament_color_check();
 //void lcd_mylang();
 
+extern void lcd_belttest();
 extern bool lcd_selftest();
 
 void lcd_menu_statistics(); 
 
+void lcd_status_screen();                         // NOT static due to using inside "Marlin_main" module ("manage_inactivity()")
 void lcd_menu_extruder_info();                    // NOT static due to using inside "Marlin_main" module ("manage_inactivity()")
 void lcd_menu_show_sensors_state();               // NOT static due to using inside "Marlin_main" module ("manage_inactivity()")
+
+#ifdef TMC2130
+bool lcd_crash_detect_enabled();
+void lcd_crash_detect_enable();
+void lcd_crash_detect_disable();
+#endif
 
 extern const char* lcd_display_message_fullscreen_P(const char *msg, uint8_t &nlines);
 extern const char* lcd_display_message_fullscreen_P(const char *msg);
@@ -129,6 +140,11 @@ extern uint8_t farm_status;
 #define SILENT_MODE_OFF SILENT_MODE_POWER
 #endif
 
+#ifdef IR_SENSOR_ANALOG
+extern bool bMenuFSDetect;
+void printf_IRSensorAnalogBoardChange(bool bPCBrev04);
+#endif //IR_SENSOR_ANALOG
+
 extern int8_t SilentModeMenu;
 extern uint8_t SilentModeMenu_MMU;
 
@@ -162,6 +178,8 @@ enum class FilamentAction : uint_least8_t
     MmuUnLoad,
     MmuEject,
     MmuCut,
+    Preheat,
+    Lay1Cal,
 };
 
 extern FilamentAction eFilamentAction;
@@ -170,7 +188,7 @@ extern bool bFilamentPreheatState;
 extern bool bFilamentAction;
 void mFilamentItem(uint16_t nTemp,uint16_t nTempBed);
 void mFilamentItemForce();
-void mFilamentMenu();
+void lcd_generic_preheat_menu();
 void unload_filament();
 
 void stack_error();
@@ -190,7 +208,9 @@ void lcd_wait_for_cool_down();
 void lcd_extr_cal_reset();
 
 void lcd_temp_cal_show_result(bool result);
+#ifdef PINDA_THERMISTOR
 bool lcd_wait_for_pinda(float temp);
+#endif //PINDA_THERMISTOR
 
 
 void bowden_menu();
@@ -208,7 +228,9 @@ void lcd_set_degree();
 void lcd_set_progress();
 #endif
 
+#if (LANG_MODE != 0)
 void lcd_language();
+#endif
 
 void lcd_wizard();
 bool lcd_autoDepleteEnabled();
@@ -216,22 +238,40 @@ bool lcd_autoDepleteEnabled();
 //! @brief Wizard state
 enum class WizState : uint8_t
 {
-    Run,            //!< run wizard? Entry point.
+    Run,            //!< run wizard? Main entry point.
     Restore,        //!< restore calibration status
-    Selftest,
+    Selftest,       //!< self test
     Xyz,            //!< xyz calibration
     Z,              //!< z calibration
-    IsFil,          //!< Is filament loaded? Entry point for 1st layer calibration
+    IsFil,          //!< Is filament loaded? First step of 1st layer calibration
     PreheatPla,     //!< waiting for preheat nozzle for PLA
     Preheat,        //!< Preheat for any material
-    Unload,         //!< Unload filament
-    LoadFil,        //!< Load filament
+    LoadFilCold,    //!< Load filament for MMU
+    LoadFilHot,     //!< Load filament without MMU
     IsPla,          //!< Is PLA filament?
-    Lay1Cal,        //!< First layer calibration
+    Lay1CalCold,    //!< First layer calibration, temperature not selected yet
+    Lay1CalHot,     //!< First layer calibration, temperature already selected
     RepeatLay1Cal,  //!< Repeat first layer calibration?
     Finish,         //!< Deactivate wizard
 };
 
 void lcd_wizard(WizState state);
+
+#define VOLT_DIV_REF 5
+#ifdef IR_SENSOR_ANALOG
+constexpr uint16_t Voltage2Raw(float V){
+	return ( V * 1023 * OVERSAMPLENR / VOLT_DIV_REF ) + 0.5F;
+}
+constexpr float Raw2Voltage(uint16_t raw){
+	return VOLT_DIV_REF*(raw / (1023.F * OVERSAMPLENR) );
+}
+constexpr uint16_t IRsensor_Hmin_TRESHOLD = Voltage2Raw(3.0F); // ~3.0V (0.6*Vcc), raw value=9821
+constexpr uint16_t IRsensor_Lmax_TRESHOLD = Voltage2Raw(1.5F); // ~1.5V (0.3*Vcc), raw value=4910
+constexpr uint16_t IRsensor_Hopen_TRESHOLD = Voltage2Raw(4.6F); // ~4.6V (N.C. @ Ru~20-50k, Rd'=56k, Ru'=10k), raw value=15059
+constexpr uint16_t IRsensor_Ldiode_TRESHOLD = Voltage2Raw(0.3F); // ~0.3V, raw value=982
+constexpr uint16_t IRsensor_VMax_TRESHOLD = Voltage2Raw(5.F); // ~5V, raw value=16368
+
+
+#endif //IR_SENSOR_ANALOG
 
 #endif //ULTRALCD_H

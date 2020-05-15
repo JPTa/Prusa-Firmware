@@ -5,6 +5,7 @@
 //#include <inttypes.h>
 //#include <avr/eeprom.h>
 //#include "eeprom.h"
+#include "backlight.h"
 
 
 //eSOUND_MODE eSoundMode=e_SOUND_MODE_LOUD;
@@ -63,6 +64,7 @@ Sound_SaveMode();
 
 //if critical is true then silend and once mode is ignored
 void Sound_MakeCustom(uint16_t ms,uint16_t tone_,bool critical){
+    backlight_wake();
      if (!critical){
           if (eSoundMode != e_SOUND_MODE_SILENT){
                if(!tone_){
@@ -135,14 +137,21 @@ switch(eSoundMode)
 
 static void Sound_DoSound_Blind_Alert(void)
 {
-     _tone(BEEPER,300);
-     _delay_ms(75);
-     _noTone(BEEPER);
-     _delay_ms(75);
+    backlight_wake(1);
+     uint8_t nI;
+
+     for(nI=0; nI<20; nI++)
+     {
+         WRITE(BEEPER,HIGH);
+         delayMicroseconds(94);
+         WRITE(BEEPER,LOW);
+         delayMicroseconds(94);
+     }
 }
 
  static void Sound_DoSound_Encoder_Move(void)
 {
+    backlight_wake();
 uint8_t nI;
 
  for(nI=0;nI<5;nI++)
@@ -156,6 +165,7 @@ uint8_t nI;
 
 static void Sound_DoSound_Echo(void)
 {
+    backlight_wake();
 uint8_t nI;
 
 for(nI=0;nI<10;nI++)
@@ -169,6 +179,7 @@ for(nI=0;nI<10;nI++)
 
 static void Sound_DoSound_Prompt(void)
 {
+    backlight_wake(2);
 WRITE(BEEPER,HIGH);
 _delay_ms(500);
 WRITE(BEEPER,LOW);
@@ -176,6 +187,7 @@ WRITE(BEEPER,LOW);
 
 static void Sound_DoSound_Alert(bool bOnce)
 {
+    backlight_wake();
 uint8_t nI,nMax;
 
 nMax=bOnce?1:3;

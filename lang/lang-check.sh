@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # lang_check.sh - multi-language support script
 #  check lang_xx.bin (language binary file)
@@ -71,5 +71,5 @@ else
  echo 'binary data NG!'
 fi
 
-read
+read -t 5
 exit

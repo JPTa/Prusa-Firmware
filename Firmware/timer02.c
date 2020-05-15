@@ -26,7 +26,7 @@ void timer0_init(void)
 	OCR0B = 255;
 	// Set fast PWM mode and inverting mode.
 	TCCR0A = (1 << WGM01) | (1 << WGM00) | (1 << COM0B1) | (1 << COM0B0);  
-	TCCR0B = (1 << CS00);    // no clock prescaling
+	TCCR0B = (1 << CS01);    // CLK/8 prescaling
 	TIMSK0 |= (1 << TOIE0);  // enable timer overflow interrupt
 	
 	// Everything, that used to be on timer0 was moved to timer2 (delay, beeping, millis etc.)
@@ -134,16 +134,6 @@ void delay2(unsigned long ms)
 			start += 1000;
 		}
 	}
-}
-
-void tone2(__attribute__((unused)) uint8_t _pin, __attribute__((unused)) unsigned int frequency/*, unsigned long duration*/)
-{
-	PIN_SET(BEEPER);
-}
-
-void noTone2(__attribute__((unused)) uint8_t _pin)
-{
-	PIN_CLR(BEEPER);
 }
 
 #endif //SYSTEM_TIMER_2

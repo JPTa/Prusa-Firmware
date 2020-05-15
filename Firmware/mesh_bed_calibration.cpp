@@ -6,6 +6,7 @@
 #include "mesh_bed_leveling.h"
 #include "stepper.h"
 #include "ultralcd.h"
+#include "temperature.h"
 
 #ifdef TMC2130
 #include "tmc2130.h"
@@ -919,7 +920,7 @@ static inline void go_xy(float x, float y, float fr)
 
 static inline void go_to_current(float fr)
 {
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], fr, active_extruder);
+    plan_buffer_line_curposXYZE(fr, active_extruder);
     st_synchronize();
 }
 
@@ -946,6 +947,7 @@ inline bool find_bed_induction_sensor_point_z(float minimum_z, uint8_t n_iter, i
         )
 {
 	bool high_deviation_occured = false; 
+    bedPWMDisabled = 1;
 #ifdef TMC2130
 	FORCE_HIGH_POWER_START;
 #endif
@@ -1044,6 +1046,7 @@ inline bool find_bed_induction_sensor_point_z(float minimum_z, uint8_t n_iter, i
 #ifdef TMC2130
 	FORCE_HIGH_POWER_END;
 #endif
+    bedPWMDisabled = 0;
 	return true;
 
 error:
@@ -1053,6 +1056,7 @@ error:
 #ifdef TMC2130
 	FORCE_HIGH_POWER_END;
 #endif
+    bedPWMDisabled = 0;
 	return false;
 }
 
@@ -2769,7 +2773,7 @@ bool sample_z() {
 	//make space
 	current_position[Z_AXIS] += 150;
 	go_to_current(homing_feedrate[Z_AXIS] / 60);
-	//plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], feedrate, active_extruder););
+	//plan_buffer_line_curposXYZE(feedrate, active_extruder););
 
 	lcd_show_fullscreen_message_and_wait_P(_T(MSG_PLACE_STEEL_SHEET));
 
