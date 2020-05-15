@@ -536,7 +536,7 @@
 
 #define TMC2130_STEALTH_Z
 
-//#define TMC2130_SERVICE_CODES_M910_M918 //Kuo Uncomment this line to enable TMC2130 service codes
+//#define TMC2130_SERVICE_CODES_M910_M918
 
 //#define TMC2130_DEBUG
 //#define TMC2130_DEBUG_WR
@@ -551,7 +551,7 @@
 #ifdef SLICETHERMISTOR //Kuo
   #define HEATER_0_MINTEMP 5
 #else
-  #define HEATER_0_MINTEMP 15
+  #define HEATER_0_MINTEMP 10
 #endif //Kuo ===
 #define HEATER_1_MINTEMP 5
 #define HEATER_2_MINTEMP 5
@@ -571,8 +571,8 @@
 #elif defined(SLICETHERMISTOR) //Kuo
   #define HEATER_0_MAXTEMP 410
 #else
-  #define HEATER_0_MAXTEMP 305
-#endif //Kuo ===
+#define HEATER_0_MAXTEMP 305
+#endif
 #define HEATER_1_MAXTEMP 305
 #define HEATER_2_MAXTEMP 305
 #define BED_MAXTEMP 125

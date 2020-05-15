@@ -869,14 +869,14 @@ static void check_if_fw_is_on_right_printer(){
     swi2c_init();
     const uint8_t pat9125_detected = swi2c_readByte_A8(PAT9125_I2C_ADDR,0x00,NULL);
       if (pat9125_detected){
-        lcd_show_fullscreen_message_and_wait_P(_i("MK3S firmware detected on MK3 printer"));}
+        lcd_show_fullscreen_message_and_wait_P(_i("MK3S firmware detected on MK3 printer"));}////c=20 r=3
     #endif //IR_SENSOR
 
     #ifdef PAT9125
       //will return 1 only if IR can detect filament in bondtech extruder so this may fail even when we have IR sensor
       const uint8_t ir_detected = !(PIN_GET(IR_SENSOR_PIN));
       if (ir_detected){
-        lcd_show_fullscreen_message_and_wait_P(_i("MK3 firmware detected on MK3S printer"));}
+        lcd_show_fullscreen_message_and_wait_P(_i("MK3 firmware detected on MK3S printer"));}////c=20 r=3
     #endif //PAT9125
   }
 #endif //FILAMENT_SENSOR
@@ -1515,7 +1515,7 @@ void setup()
   }
 
   if (!previous_settings_retrieved) {
-	  lcd_show_fullscreen_message_and_wait_P(_i("Old settings found. Default PID, Esteps etc. will be set.")); //if EEPROM version or printer type was changed, inform user that default setting were loaded////MSG_DEFAULT_SETTINGS_LOADED c=20 r=4
+	  lcd_show_fullscreen_message_and_wait_P(_i("Old settings found. Default PID, Esteps etc. will be set.")); //if EEPROM version or printer type was changed, inform user that default setting were loaded////MSG_DEFAULT_SETTINGS_LOADED c=20 r=5
 	  Config_StoreSettings();
   }
   if (eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE) == 1) {
@@ -4970,6 +4970,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
 		}
 		#endif // SUPPORT_VERBOSITY
 		int l_feedmultiply = setup_for_endstop_move(false); //save feedrate and feedmultiply, sets feedmultiply to 100
+		const char *kill_message = NULL;
 		while (mesh_point != nMeasPoints * nMeasPoints) {
 			// Get coords of a measuring point.
 			uint8_t ix = mesh_point % nMeasPoints; // from 0 to MESH_NUM_X_POINTS - 1
@@ -9606,13 +9607,13 @@ static void handleSafetyTimer()
 }
 #endif //SAFETYTIMER
 
-#define FS_CHECK_COUNT 15
+#define FS_CHECK_COUNT 250
 void manage_inactivity(bool ignore_stepper_queue/*=false*/) //default argument set in Marlin.h
 {
 #ifdef FILAMENT_SENSOR
 bool bInhibitFlag;
 #ifdef IR_SENSOR_ANALOG
-static uint8_t nFSCheckCount=0;
+static uint16_t nFSCheckCount=0;
 #endif // IR_SENSOR_ANALOG
 
 	if (mmu_enabled == false)
@@ -9632,25 +9633,53 @@ static uint8_t nFSCheckCount=0;
 			if (!moves_planned() && !IS_SD_PRINTING && !is_usb_printing && (lcd_commands_type != LcdCommands::Layer1Cal) && ! eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE))
 			{
 #ifdef IR_SENSOR_ANALOG
-                    bool bTemp=current_voltage_raw_IR>IRsensor_Hmin_TRESHOLD;
-                    bTemp=bTemp&&current_voltage_raw_IR<IRsensor_Hopen_TRESHOLD;
-                    bTemp=bTemp&&(!CHECK_ALL_HEATERS);
-                    bTemp=bTemp&&(menu_menu==lcd_status_screen);
-                    bTemp=bTemp&&((oFsensorPCB==ClFsensorPCB::_Old)||(oFsensorPCB==ClFsensorPCB::_Undef));
-                    bTemp=bTemp&&fsensor_enabled;
-                    if(bTemp)
-                    {
+				static uint16_t minVolt = Voltage2Raw(6.F), maxVolt = 0;
+				// detect min-max, some long term sliding window for filtration may be added
+				// avoiding floating point operations, thus computing in raw
+				if( current_voltage_raw_IR > maxVolt )maxVolt = current_voltage_raw_IR;
+				if( current_voltage_raw_IR < minVolt )minVolt = current_voltage_raw_IR;
+				
+#if 0
+				{ // debug print
+					static uint16_t lastVolt = ~0U;
+					if( current_voltage_raw_IR != lastVolt ){
+						printf_P(PSTR("fs volt=%4.2fV (min=%4.2f max=%4.2f)\n"), Raw2Voltage(current_voltage_raw_IR), Raw2Voltage(minVolt), Raw2Voltage(maxVolt) );
+						lastVolt = current_voltage_raw_IR;
+					}
+				}
+#endif
+				// the trouble is, I can hold the filament in the hole in such a way, that it creates the exact voltage
+				// to be detected as the new fsensor
+				// We can either fake it by extending the detection window to a looooong time
+				// or do some other countermeasures
+				
+				// what we want to detect:
+				// if minvolt gets below ~0.6V, it means there is an old fsensor
+				// if maxvolt gets above 4.6V, it means we either have an old fsensor or broken cables/fsensor
+				// So I'm waiting for a situation, when minVolt gets to range <0, 0.7> and maxVolt gets into range <4.4, 5>
+				// If and only if minVolt is in range <0.6, 0.7> and maxVolt is in range <4.4, 4.5>, I'm considering a situation with the new fsensor
+				// otherwise, I don't care
+				
+				if( minVolt >= Voltage2Raw(0.3F) && minVolt <= Voltage2Raw(0.5F) 
+				 && maxVolt >= Voltage2Raw(4.2F) && maxVolt <= Voltage2Raw(4.6F)
+				){
+                    bool bTemp = (!CHECK_ALL_HEATERS);
+                    bTemp = bTemp && (menu_menu==lcd_status_screen);
+                    bTemp = bTemp && ((oFsensorPCB==ClFsensorPCB::_Old)||(oFsensorPCB==ClFsensorPCB::_Undef));
+                    bTemp = bTemp && fsensor_enabled;
+                    if(bTemp){
                          nFSCheckCount++;
-                         if(nFSCheckCount>FS_CHECK_COUNT)
-                         {
+                         if(nFSCheckCount>FS_CHECK_COUNT){
                               nFSCheckCount=0;    // not necessary
                               oFsensorPCB=ClFsensorPCB::_Rev04;
                               eeprom_update_byte((uint8_t*)EEPROM_FSENSOR_PCB,(uint8_t)oFsensorPCB);
                               printf_IRSensorAnalogBoardChange(true);
-                              lcd_setstatuspgm(_i("FS v0.4 or newer"));
+                              lcd_setstatuspgm(_i("FS v0.4 or newer"));////c=18
                          }
-                    }
-                    else nFSCheckCount=0;
+                    } else {
+						nFSCheckCount=0;
+					}
+				}
 #endif // IR_SENSOR_ANALOG
 				if (fsensor_check_autoload())
 				{
@@ -11016,7 +11045,7 @@ void recover_print(uint8_t automatic) {
 	char cmd[30];
 	lcd_update_enable(true);
 	lcd_update(2);
-  lcd_setstatuspgm(_i("Recovering print    "));////MSG_RECOVERING_PRINT c=20 r=1
+  lcd_setstatuspgm(_i("Recovering print    "));////MSG_RECOVERING_PRINT c=20
 
   // Recover position, temperatures and extrude_multipliers
   bool mbl_was_active = recover_machine_state_after_power_panic();

@@ -2,6 +2,7 @@
 #define CONFIGURATION_PRUSA_H
 
 #include <limits.h>
+//-//
 #include "printers.h"
 /*------------------------------------
  GENERAL SETTINGS
@@ -25,10 +26,6 @@
 #define MOTHERBOARD BOARD_EINSY_1_0a
 #define STEEL_SHEET
 #define HAS_SECOND_SERIAL_PORT
-// #define HAS_OLED_SCREEN
-
-// PSU
-// #define PSU_Delta                                 // uncomment if DeltaElectronics PSU installed
 
 
 // Uncomment the below for the E3D PT100 temperature sensor (with or without PT100 Amplifier)
@@ -536,7 +533,7 @@
 
 #define TMC2130_STEALTH_Z
 
-//#define TMC2130_SERVICE_CODES_M910_M918 //Kuo Uncomment this line to enable TMC2130 service codes
+//#define TMC2130_SERVICE_CODES_M910_M918
 
 //#define TMC2130_DEBUG
 //#define TMC2130_DEBUG_WR
@@ -551,7 +548,7 @@
 #ifdef SLICETHERMISTOR //Kuo
   #define HEATER_0_MINTEMP 5
 #else
-  #define HEATER_0_MINTEMP 15
+  #define HEATER_0_MINTEMP 10
 #endif //Kuo ===
 #define HEATER_1_MINTEMP 5
 #define HEATER_2_MINTEMP 5
@@ -935,7 +932,7 @@
 // we just need to shift to the nearest fullstep, but we need a move which is at least
 // "dropsegments" steps long. All the above rules still need to apply.
 #define UVLO_TINY_Z_AXIS_SHIFT 0.16
-// If power panic occured, and the current temperature is higher then target temperature before interrupt minus this offset, print will be recovered automatically.
+// If power panic occured, and the current temperature is higher then target temperature before interrupt minus this offset, print will be recovered automatically. 
 #define AUTOMATIC_UVLO_BED_TEMP_OFFSET 5 
 
 #define HEATBED_V2
