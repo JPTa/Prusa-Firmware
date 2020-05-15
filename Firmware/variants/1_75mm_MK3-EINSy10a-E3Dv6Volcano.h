@@ -169,7 +169,7 @@
 #define Y_MIN_POS -4 //orig -4
 #ifdef SKELESTRUDER //kuo Skelestruder height
   #if defined(E3D_VOLCANO)
-    #define Z_MAX_POS 207
+    #define Z_MAX_POS 207 // JTa: minus 3mm due to bed mod!
   #else
     #define Z_MAX_POS 220
   #endif
@@ -616,6 +616,11 @@
   #define LOAD_FILAMENT_DIST_1 40  //Kuo BMG load
   #define LOAD_FILAMENT_RATE_1 400
   #define LOAD_FILAMENT_DIST_2 40 //10 mm farther
+  #define LOAD_FILAMENT_RATE_2 300
+#elif defined(SKELESTRUDER)
+  #define LOAD_FILAMENT_DIST_1 40  //JTa: Skele load
+  #define LOAD_FILAMENT_RATE_1 400
+  #define LOAD_FILAMENT_DIST_2 30 
   #define LOAD_FILAMENT_RATE_2 300
 #else
   #define LOAD_FILAMENT_DIST_1 40  //Kuo Prusa default load
