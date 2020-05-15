@@ -25,11 +25,6 @@
 // #define VT100
 
 // commands
-// WEH002004-OLED specific commands
-#ifdef HAS_OLED_SCREEN
-	#define OLED_INIT 0x00
-#endif
-
 #define LCD_CLEARDISPLAY 0x01
 #define LCD_RETURNHOME 0x02
 #define LCD_ENTRYMODESET 0x04
