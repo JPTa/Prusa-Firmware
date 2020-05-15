@@ -620,7 +620,7 @@
 #elif defined(SKELESTRUDER)
   #define LOAD_FILAMENT_DIST_1 40  //JTa: Skele load
   #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 30 
+  #define LOAD_FILAMENT_DIST_2 20  // 10 mm less for Skele
   #define LOAD_FILAMENT_RATE_2 300
 #else
   #define LOAD_FILAMENT_DIST_1 40  //Kuo Prusa default load
