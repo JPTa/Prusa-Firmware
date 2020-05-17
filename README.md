@@ -7,7 +7,7 @@ Combined work by others: Mike Grozdanovic (OLED fixes), Gerd Jentz (OLED fixes),
 
 VFA's are a solved issue with 0.9 degree stepper motors. This post is a summary of what is needed to use 0.9 degree motors.
 
-# Now based on Prusa MK3 branch (3.8.1 RC newer than release 3.8.0)
+# Now based on Prusa MK3 branch
 This branch adds support for...
 
 0.9 degree motors on XYZ
@@ -26,7 +26,6 @@ Filament load/unload and z dimension changes for Slice magnum, Bondtech Prusa Up
 
 Mini ramming during unload to reduce unloaded filament tip size. Does not require MMU2S for this feature.
 
-Polycarbonate in preheat menu
 
 # MUST UPDATE RAMBO BOARD In ARDUINO IDE TO PRUSA RESEARCH VERSION!!!!!!
 As of 3.8.0, Prusa moved to new board definition. You can no longer compile for the Ultimachines board. New instructions for obtaining Prusa version are in compilation directions below.
