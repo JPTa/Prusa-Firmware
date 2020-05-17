@@ -531,8 +531,8 @@
 #endif //Kuo ======
 
 //new settings is possible for vsense = 1, running current value > 31 set vsense to zero and shift both currents by 1 bit right (Z axis only)
-#define TMC2130_CURRENTS_H {16, 20, 35, 30}  // default holding currents for all axes
-#define TMC2130_CURRENTS_R {16, 20, 35, 30}  // default running currents for all axes
+#define TMC2130_CURRENTS_H {16, 20, 35, 26}  // default holding currents for all axes
+#define TMC2130_CURRENTS_R {16, 20, 35, 26}  // default running currents for all axes
 
 #define TMC2130_STEALTH_Z
 
