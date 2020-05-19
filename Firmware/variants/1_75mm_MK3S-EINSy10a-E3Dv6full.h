@@ -25,10 +25,10 @@
 #define MOTHERBOARD BOARD_EINSY_1_0a
 #define STEEL_SHEET
 #define HAS_SECOND_SERIAL_PORT
-// #define HAS_OLED_SCREEN
+#define HAS_OLED_SCREEN
 
 // PSU
-#define PSU_Delta                                 // uncomment if DeltaElectronics PSU installed
+// #define PSU_Delta                                 // uncomment if DeltaElectronics PSU installed
 
 
 // Uncomment the below for the E3D PT100 temperature sensor (with or without PT100 Amplifier)
