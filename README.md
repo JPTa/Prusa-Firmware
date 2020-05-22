@@ -1,14 +1,15 @@
-# Prusa-Firmware with support for OLED display / 0.9 deg motors / LA 1.5
+# Prusa-Firmware with support for OLED display / 0.9 deg motors
 
-Combined work by others: Mike Grozdanovic (OLED fixes), Gerd Jentz (OLED fixes), Guy Kuo (0.9 deg motors), Yuri D'Elia (LA 1.5 and other)
-
+Combined work by others: 3d-gussner (OLED support), Guy Kuo (0.9 deg motors, geared extruders, etc.)
 
 # VFA fix summary, firmware compilation, and shopping list
 
 VFA's are a solved issue with 0.9 degree stepper motors. This post is a summary of what is needed to use 0.9 degree motors.
 
-# Now based on Prusa MK3 branch
-This branch adds support for...
+# Now based on Prusa MK3 branch (3.9.x)
+This branch adds support for:
+
+OLED displays (f.e. Winstar WEH002004AWPP5N00000 or Raystar REC002004BWPP5N00000)
 
 0.9 degree motors on XYZ
 
@@ -19,8 +20,6 @@ Slice thermistor
 Slice Magnum Mosquito
 
 E3D Volcano
-
-Linear Advance 1.5
 
 Filament load/unload and z dimension changes for Slice magnum, Bondtech Prusa Upgrade MK3 & MK3S extruders, Skelestruder
 
