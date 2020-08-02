@@ -2,7 +2,6 @@
 #define CONFIGURATION_PRUSA_H
 
 #include <limits.h>
-//-//
 #include "printers.h"
 /*------------------------------------
  GENERAL SETTINGS
@@ -525,10 +524,10 @@
   #define TMC2130_SG_THRS_E       3    // std stallguard sensitivity for E axis
 #else
   #define TMC2130_SG_THRS_E       3    // Kuo change here if different needed for 0.9 degree motors
+#endif //Kuo ======
 
 // Separate setting for homing, uses above settings by default
 #define TMC2130_SG_THRS_HOME {TMC2130_SG_THRS_X, TMC2130_SG_THRS_Y, TMC2130_SG_THRS_Z, TMC2130_SG_THRS_E}
-#endif //Kuo ======
 
 //new settings is possible for vsense = 1, running current value > 31 set vsense to zero and shift both currents by 1 bit right (Z axis only)
 #define TMC2130_CURRENTS_H {16, 20, 35, 30}  // default holding currents for all axes
