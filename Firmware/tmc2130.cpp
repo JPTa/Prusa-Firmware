@@ -23,19 +23,9 @@ uint8_t tmc2130_current_h[4] = TMC2130_CURRENTS_H;
 //running currents
 uint8_t tmc2130_current_r[4] = TMC2130_CURRENTS_R;
 
-//Kuo running currents for homing
-#ifndef X_AXIS_MOTOR_09 //Kuo
-  #define X_AXIS_current_r_home 8
-#else 
-  #define X_AXIS_current_r_home 10  //Kuo adjust x homing current slightly higher for 0.9 x
-#endif
-#ifndef Y_AXIS_MOTOR_09 //Kuo
-  #define Y_AXIS_current_r_home 10
-#else 
-  #define Y_AXIS_current_r_home 12  //Kuo adjust y homing current slightly higher for 0.9 y
-#endif
-  uint8_t tmc2130_current_r_home[4] = {X_AXIS_current_r_home, Y_AXIS_current_r_home, 20, 18};
-//Kuo ===
+//running currents for homing
+uint8_t tmc2130_current_r_home[4] = TMC2130_CURRENTS_R_HOME;
+
 
 //pwm_ampl
 uint8_t tmc2130_pwm_ampl[4] = {TMC2130_PWM_AMPL_X, TMC2130_PWM_AMPL_Y, TMC2130_PWM_AMPL_Z, TMC2130_PWM_AMPL_E};
@@ -50,7 +40,7 @@ uint8_t tmc2130_mres[4] = {0, 0, 0, 0}; //will be filed at begin of init
 
 
 uint8_t tmc2130_sg_thr[4] = {TMC2130_SG_THRS_X, TMC2130_SG_THRS_Y, TMC2130_SG_THRS_Z, TMC2130_SG_THRS_E};
-uint8_t tmc2130_sg_thr_home[4] = {TMC2130_SG_THRS_X_HOME, TMC2130_SG_THRS_Y_HOME, TMC2130_SG_THRS_Z, TMC2130_SG_THRS_E}; //Kuo apply constants from Configuration_prusa.h
+uint8_t tmc2130_sg_thr_home[4] = TMC2130_SG_THRS_HOME;
 
 
 uint8_t tmc2130_sg_homing_axes_mask = 0x00;
@@ -72,7 +62,8 @@ tmc2130_chopper_config_t tmc2130_chopper_config[4] = {
       {TMC2130_TOFF_Y, TMC2130_HSTR_Y, TMC2130_HEND_Y, TMC2130_TBL_Y, TMC2130_RES_Y},
       {TMC2130_TOFF_Z, TMC2130_HSTR_Z, TMC2130_HEND_Z, TMC2130_TBL_Z, TMC2130_RES_Z},
       {TMC2130_TOFF_E, TMC2130_HSTR_E, TMC2130_HEND_E, TMC2130_TBL_E, TMC2130_RES_E}
-     }; //Kuo ===
+};
+//Kuo ===
 
 bool tmc2130_sg_stop_on_crash = true;
 uint8_t tmc2130_sg_diag_mask = 0x00;
