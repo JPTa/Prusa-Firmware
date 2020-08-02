@@ -26,6 +26,10 @@
 #define MOTHERBOARD BOARD_EINSY_1_0a
 #define STEEL_SHEET
 #define HAS_SECOND_SERIAL_PORT
+#define HAS_OLED_SCREEN
+
+// PSU
+// #define PSU_Delta                                 // uncomment if DeltaElectronics PSU installed
 
 
 // Uncomment the below for the E3D PT100 temperature sensor (with or without PT100 Amplifier)
@@ -165,18 +169,18 @@
 #define X_MIN_POS 0
 #define Y_MAX_POS 212.5
 #define Y_MIN_POS -4 //orig -4
-#if defined(SKELESTRUDER) && !defined(E3D_VOLCANO) //kuo Skelestruder height
-  #define Z_MAX_POS 220
+#ifdef SKELESTRUDER //kuo Skelestruder height
+  #if defined(E3D_VOLCANO)
+    #define Z_MAX_POS 205
+  #else
+    #define Z_MAX_POS 220
+  #endif
 #elif defined(BONDTECH_PRUSA_UPGRADE_MK3) //kuo BMG height
   #define Z_MAX_POS 205
 #elif defined(BONDTECH_PRUSA_UPGRADE_MK3S)//kuo BMG height
   #define Z_MAX_POS 205
 #elif defined(E3D_VOLCANO)//kuo Volcano height
-  #ifdef SKELESTRUDER
-    #define Z_MAX_POS 205
-  #else
-    #define Z_MAX_POS 202
-  #endif
+  #define Z_MAX_POS 202
 #else
   #define Z_MAX_POS 210 //default height
 #endif
@@ -501,18 +505,14 @@
 
 #ifndef X_AXIS_MOTOR_09 //Kuo stallguard homing settings
   #define TMC2130_SG_THRS_X       3    // std stallguard sensitivity for X axis
-  #define TMC2130_SG_THRS_X_HOME  3    // std homing stallguard threshold for X axis
 #else
   #define TMC2130_SG_THRS_X       4    // Kuo change here if different needed for 0.9 degree motors
-  #define TMC2130_SG_THRS_X_HOME  4
 #endif
 
 #ifndef Y_AXIS_MOTOR_09 //Kuo
   #define TMC2130_SG_THRS_Y       3    // std stallguard sensitivity for Y axis
-  #define TMC2130_SG_THRS_Y_HOME  3    // std homing stallguard threshold for Y axis
 #else
   #define TMC2130_SG_THRS_Y       4    // Kuo change here if different needed for 0.9 degree motors
-  #define TMC2130_SG_THRS_Y_HOME  4
 #endif
 
 #ifndef Z_AXIS_MOTOR_09 //Kuo
@@ -525,11 +525,29 @@
   #define TMC2130_SG_THRS_E       3    // std stallguard sensitivity for E axis
 #else
   #define TMC2130_SG_THRS_E       3    // Kuo change here if different needed for 0.9 degree motors
+
+// Separate setting for homing, uses above settings by default
+#define TMC2130_SG_THRS_HOME {TMC2130_SG_THRS_X, TMC2130_SG_THRS_Y, TMC2130_SG_THRS_Z, TMC2130_SG_THRS_E}
 #endif //Kuo ======
 
 //new settings is possible for vsense = 1, running current value > 31 set vsense to zero and shift both currents by 1 bit right (Z axis only)
 #define TMC2130_CURRENTS_H {16, 20, 35, 30}  // default holding currents for all axes
 #define TMC2130_CURRENTS_R {16, 20, 35, 30}  // default running currents for all axes
+
+//Kuo running currents for homing
+#ifndef X_AXIS_MOTOR_09 //Kuo
+  #define X_AXIS_current_r_home 8
+#else 
+  #define X_AXIS_current_r_home 10  //Kuo adjust x homing current slightly higher for 0.9 x
+#endif
+#ifndef Y_AXIS_MOTOR_09 //Kuo
+  #define Y_AXIS_current_r_home 10
+#else 
+  #define Y_AXIS_current_r_home 12  //Kuo adjust y homing current slightly higher for 0.9 y
+#endif
+
+#define TMC2130_CURRENTS_R_HOME {X_AXIS_current_r_home, Y_AXIS_current_r_home, 20, 18} // homing running currents for all axes
+//Kuo ===
 
 #define TMC2130_STEALTH_Z
 
@@ -570,8 +588,8 @@
 #elif defined(SLICETHERMISTOR) //Kuo
   #define HEATER_0_MAXTEMP 410
 #else
-  #define HEATER_0_MAXTEMP 305
-#endif //Kuo ===
+#define HEATER_0_MAXTEMP 305
+#endif
 #define HEATER_1_MAXTEMP 305
 #define HEATER_2_MAXTEMP 305
 #define BED_MAXTEMP 125
@@ -600,8 +618,7 @@
 #define EXTRUDER_2_AUTO_FAN_PIN   -1
 #define EXTRUDER_AUTO_FAN_TEMPERATURE 50
 #define EXTRUDER_AUTO_FAN_SPEED   255  // == full speed
-#define EXTRUDER_ALTFAN_DETECT
-#define EXTRUDER_ALTFAN_SPEED_SILENT 255
+
 
 
 /*------------------------------------
@@ -617,6 +634,11 @@
   #define LOAD_FILAMENT_DIST_1 40  //Kuo BMG load
   #define LOAD_FILAMENT_RATE_1 400
   #define LOAD_FILAMENT_DIST_2 40 //10 mm farther
+  #define LOAD_FILAMENT_RATE_2 300
+#elif defined(SKELESTRUDER)
+  #define LOAD_FILAMENT_DIST_1 40  //JTa: Skele load
+  #define LOAD_FILAMENT_RATE_1 400
+  #define LOAD_FILAMENT_DIST_2 20  // 10 mm less for Skele
   #define LOAD_FILAMENT_RATE_2 300
 #else
   #define LOAD_FILAMENT_DIST_1 40  //Kuo Prusa default load
@@ -938,7 +960,7 @@
 // we just need to shift to the nearest fullstep, but we need a move which is at least
 // "dropsegments" steps long. All the above rules still need to apply.
 #define UVLO_TINY_Z_AXIS_SHIFT 0.16
-// If power panic occured, and the current temperature is higher then target temperature before interrupt minus this offset, print will be recovered automatically. 
+// If power panic occured, and the current temperature is higher then target temperature before interrupt minus this offset, print will be recovered automatically.
 #define AUTOMATIC_UVLO_BED_TEMP_OFFSET 5 
 
 #define HEATBED_V2
@@ -951,6 +973,14 @@
 #define MMU_HWRESET
 #define MMU_DEBUG //print communication between MMU2 and printer on serial
 #define MMU_HAS_CUTTER
+
+// This is experimental feature requested by our test department.
+// There is no known use for ordinary user. If enabled by this macro
+// and enabled from printer menu (not enabled by default). It cuts filament
+// every time when switching filament from gcode. MMU_HAS_CUTTER needs to be
+// defined.
+
+//#define MMU_ALWAYS_CUT
 #define MMU_IDLER_SENSOR_ATTEMPTS_NR 21 //max. number of attempts to load filament if first load failed; value for max bowden length and case when loading fails right at the beginning
 
 #endif //__CONFIGURATION_PRUSA_H

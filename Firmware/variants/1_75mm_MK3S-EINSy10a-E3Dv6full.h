@@ -88,7 +88,7 @@
 //Don't forget to also send gcode to set e-steps as detailed earlier
 //Reversion back from geared extruder requires sending M92 E280 & M500 to printer
 //
-//#define SKELESTRUDER // Uncomment if you have a 3.5 ratio Skelestruder. Also applies the patches for load distances and Z height.
+//#define SKELESTRUDER // Uncomment if you have a skelestruder. Applies the patches for load distances and Z height.
 //#define BONDTECH_PRUSA_UPGRADE_MK3 //Kuo Uncomment for Bondtech MK3 extruder upgrade. 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define BONDTECH_PRUSA_UPGRADE_MK3S //Kuo Uncomment for Bondtech MK3S extruder upgrade. (Note the S!!!!) 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define EXTRUDER_GEARRATIO_30 //Kuo Uncomment for extruder with gear ratio 3.0. 
@@ -170,7 +170,7 @@
 #define Y_MIN_POS -4 //orig -4
 #ifdef SKELESTRUDER //kuo Skelestruder height
   #if defined(E3D_VOLCANO)
-    #define Z_MAX_POS 212
+    #define Z_MAX_POS 205
   #else
     #define Z_MAX_POS 220
   #endif
@@ -504,18 +504,14 @@
 
 #ifndef X_AXIS_MOTOR_09 //Kuo stallguard homing settings
   #define TMC2130_SG_THRS_X       3    // std stallguard sensitivity for X axis
-  #define TMC2130_SG_THRS_X_HOME  3    // std homing stallguard threshold for X axis
 #else
   #define TMC2130_SG_THRS_X       4    // Kuo change here if different needed for 0.9 degree motors
-  #define TMC2130_SG_THRS_X_HOME  4
 #endif
 
 #ifndef Y_AXIS_MOTOR_09 //Kuo
   #define TMC2130_SG_THRS_Y       3    // std stallguard sensitivity for Y axis
-  #define TMC2130_SG_THRS_Y_HOME  3    // std homing stallguard threshold for Y axis
 #else
   #define TMC2130_SG_THRS_Y       4    // Kuo change here if different needed for 0.9 degree motors
-  #define TMC2130_SG_THRS_Y_HOME  4
 #endif
 
 #ifndef Z_AXIS_MOTOR_09 //Kuo
@@ -528,11 +524,29 @@
   #define TMC2130_SG_THRS_E       3    // std stallguard sensitivity for E axis
 #else
   #define TMC2130_SG_THRS_E       3    // Kuo change here if different needed for 0.9 degree motors
+
+// Separate setting for homing, uses above settings by default
+#define TMC2130_SG_THRS_HOME {TMC2130_SG_THRS_X, TMC2130_SG_THRS_Y, TMC2130_SG_THRS_Z, TMC2130_SG_THRS_E}
 #endif //Kuo ======
 
 //new settings is possible for vsense = 1, running current value > 31 set vsense to zero and shift both currents by 1 bit right (Z axis only)
 #define TMC2130_CURRENTS_H {16, 20, 35, 30}  // default holding currents for all axes
 #define TMC2130_CURRENTS_R {16, 20, 35, 30}  // default running currents for all axes
+
+//Kuo running currents for homing
+#ifndef X_AXIS_MOTOR_09 //Kuo
+  #define X_AXIS_current_r_home 8
+#else 
+  #define X_AXIS_current_r_home 10  //Kuo adjust x homing current slightly higher for 0.9 x
+#endif
+#ifndef Y_AXIS_MOTOR_09 //Kuo
+  #define Y_AXIS_current_r_home 10
+#else 
+  #define Y_AXIS_current_r_home 12  //Kuo adjust y homing current slightly higher for 0.9 y
+#endif
+
+#define TMC2130_CURRENTS_R_HOME {X_AXIS_current_r_home, Y_AXIS_current_r_home, 20, 18} // homing running currents for all axes
+//Kuo ===
 
 #define TMC2130_STEALTH_Z
 
@@ -621,6 +635,11 @@
   #define LOAD_FILAMENT_DIST_1 40  //Kuo BMG load
   #define LOAD_FILAMENT_RATE_1 400
   #define LOAD_FILAMENT_DIST_2 40 //10 mm farther
+  #define LOAD_FILAMENT_RATE_2 300
+#elif defined(SKELESTRUDER)
+  #define LOAD_FILAMENT_DIST_1 40  //JTa: Skele load
+  #define LOAD_FILAMENT_RATE_1 400
+  #define LOAD_FILAMENT_DIST_2 20  // 10 mm less for Skele
   #define LOAD_FILAMENT_RATE_2 300
 #else
   #define LOAD_FILAMENT_DIST_1 40  //Kuo Prusa default load
