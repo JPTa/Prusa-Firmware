@@ -62,6 +62,11 @@
 // before setting a PWM value. (Does not work with software PWM for fan on Sanguinololu)
 #define FAN_KICKSTART_TIME 800
 
+/**
+ * Auto-report temperatures with M155 S<seconds>
+ */
+#define AUTO_REPORT_TEMPERATURES
+
 
 
 
@@ -376,6 +381,11 @@ const unsigned int dropsegments=5; //everything with less than this number of st
   #endif
 #endif
 
+/**
+ * Include capabilities in M115 output
+ */
+#define EXTENDED_CAPABILITIES_REPORT
+
 //===========================================================================
 //=============================  Define Defines  ============================
 //===========================================================================
@@ -436,6 +446,10 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 #if TEMP_SENSOR_BED == 0
   #undef BED_MINTEMP
   #undef BED_MAXTEMP
+#endif
+#if TEMP_SENSOR_AMBIENT == 0
+  #undef AMBIENT_MINTEMP
+  #undef AMBIENT_MAXTEMP
 #endif
 
 

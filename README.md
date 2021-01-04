@@ -1,3 +1,4 @@
+
 # Prusa-Firmware with support for OLED display / 0.9 deg motors
 
 Combined work by others: 3d-gussner (OLED support), Guy Kuo (0.9 deg motors, geared extruders, etc.)
@@ -590,3 +591,4 @@ A:Our production builds are 99.9% equivalent to https://github.com/prusa3d/Prusa
 Q:Why are build instructions for Arduino mess.
 
 Y:We are too lazy to ship proper board definition for Arduino. We plan to swich to cmake + ninja to be inherently multiplatform, easily integrate build tools, suport more IDEs, get 10 times shorter build times and be able to update compiler whenewer we want.
+
