@@ -190,7 +190,7 @@ static void lcd_begin(uint8_t clear)
 	lcd_displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;
 	// set the entry mode
 	lcd_command(LCD_ENTRYMODESET | lcd_displaymode);
-    
+
 #else
     lcd_displaycontrol = LCD_CURSOROFF | LCD_BLINKOFF;
     lcd_displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;

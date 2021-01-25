@@ -2,6 +2,7 @@
 #define CONFIGURATION_PRUSA_H
 
 #include <limits.h>
+//-//
 #include "printers.h"
 /*------------------------------------
  GENERAL SETTINGS
@@ -530,8 +531,8 @@
 #define TMC2130_SG_THRS_HOME {TMC2130_SG_THRS_X, TMC2130_SG_THRS_Y, TMC2130_SG_THRS_Z, TMC2130_SG_THRS_E}
 
 //new settings is possible for vsense = 1, running current value > 31 set vsense to zero and shift both currents by 1 bit right (Z axis only)
-#define TMC2130_CURRENTS_H {16, 20, 35, 26}  // default holding currents for all axes
-#define TMC2130_CURRENTS_R {16, 20, 35, 26}  // default running currents for all axes
+#define TMC2130_CURRENTS_H {16, 20, 35, 14}  // default holding currents for all axes
+#define TMC2130_CURRENTS_R {16, 20, 35, 14}  // default running currents for all axes
 
 //Kuo running currents for homing
 #ifndef X_AXIS_MOTOR_09 //Kuo
@@ -579,7 +580,8 @@
 #error "Check maximal allowed value @ ShortTimer (see BED_MINTEMP_DELAY definition)"
 #endif
 #define SUPERPINDA_SUPPORT
-#define PINDA_MINTEMP BED_MINTEMP
+#define PINDA_MINTEMP 10
+//#define PINDA_TEMP_COMP //Used to enable SuperPINDA toggle menu/function
 #define AMBIENT_MINTEMP -30
 
 // Maxtemps
@@ -619,6 +621,8 @@
 #define EXTRUDER_2_AUTO_FAN_PIN   -1
 #define EXTRUDER_AUTO_FAN_TEMPERATURE 50
 #define EXTRUDER_AUTO_FAN_SPEED   255  // == full speed
+#define EXTRUDER_ALTFAN_DETECT
+#define EXTRUDER_ALTFAN_SPEED_SILENT 255
 
 
 

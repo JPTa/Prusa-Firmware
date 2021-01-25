@@ -808,7 +808,6 @@ void mmu_load_to_nozzle()
     float feedrate = 562;
 	plan_buffer_line_curposXYZE(feedrate / 60);
     st_synchronize();
-
 	#ifdef SLICEMAGNUM //Kuo adjust 2nd stage move so we stop above melt zone at next fast move
 		current_position[E_AXIS] += 9.4f; //5 mm less because melt zone is further up
 	#elif defined(SKELESTRUDER)
@@ -1479,7 +1478,6 @@ static bool can_load()
       current_position[E_AXIS] -= 52;
     #endif //Kuo ===	
     plan_buffer_line_curposXYZE(MMU_LOAD_FEEDRATE);
-
     st_synchronize();
 
     uint_least8_t filament_detected_count = 0;
