@@ -53,6 +53,7 @@ static_assert(sizeof(Sheets) == EEPROM_SHEETS_SIZEOF, "Sizeof(Sheets) is not EEP
    - __L__		Language
    - __S__ 		Statistics
    - __P__ 		Shipping prep
+   - __M__ 		Service/Maintenance prep
    - __S/P__	Statistics and Shipping prep
    
   will overwrite existing values to 0 or default.
@@ -157,6 +158,7 @@ static_assert(sizeof(Sheets) == EEPROM_SHEETS_SIZEOF, "Sizeof(Sheets) is not EEP
 | 0x0F60h 3936		| float		| EEPROM_XYZ_CAL_SKEW					| ???			| ff ff ff ffh			| XYZ skew value									| ???			| D3 Ax0f60 C4
 | 0x0F5Fh 3935		| uint8		| EEPROM_WIZARD_ACTIVE					| 01h 1			| 01h 1			__P__	| Wizard __active__									| ???			| D3 Ax0f5f C1
 | ^					| ^			| ^										| 00h 0			| ^						| Wizard __inactive__								| ^ 			| ^
+| ^					| ^			| ^										| 02h 2			| 02h 2			__M__	| Wizard active - Z cal after shipping/service prep | ^ 			| ^
 | 0x0F5Dh 3933		| uint16	| EEPROM_BELTSTATUS_X					| ???			| ff ffh				| X Beltstatus 										| ???			| D3 Ax0f5d C2
 | 0x0F5Bh 3931		| uint16	| EEPROM_BELTSTATUS_Y					| ???			| ff ffh				| Y Beltstatus 										| ???			| D3 Ax0f5b C2
 | 0x0F5Ah 3930		| uint8		| EEPROM_DIR_DEPTH						| 00h-ffh 0-255	| ffh 255				| Directory depth									| ???			| D3 Ax0f5a C1
@@ -408,7 +410,7 @@ static_assert(sizeof(Sheets) == EEPROM_SHEETS_SIZEOF, "Sizeof(Sheets) is not EEP
 #define EEPROM_POWER_COUNT       (EEPROM_FERROR_COUNT - 1)                      // uint8 (orig EEPROM_UVLO_MESH_BED_LEVELING-17)
 
 #define EEPROM_XYZ_CAL_SKEW (EEPROM_POWER_COUNT - 4)                            // float for skew backup
-#define EEPROM_WIZARD_ACTIVE (EEPROM_XYZ_CAL_SKEW - 1)
+#define EEPROM_WIZARD_ACTIVE (EEPROM_XYZ_CAL_SKEW - 1)                          // 0: wizard not active, 1: wizard active, 2: wizard active without yes/no = forced calibrate Z after shipping/service prep.
 #define EEPROM_BELTSTATUS_X (EEPROM_WIZARD_ACTIVE - 2)                          // uint16
 #define EEPROM_BELTSTATUS_Y (EEPROM_BELTSTATUS_X - 2)                           // uint16
 

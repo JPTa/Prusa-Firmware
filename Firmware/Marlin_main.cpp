@@ -709,124 +709,83 @@ void softReset()
 #endif
 
 
+static void factory_reset_stats(){
+    eeprom_update_dword((uint32_t *)EEPROM_TOTALTIME, 0);
+    eeprom_update_dword((uint32_t *)EEPROM_FILAMENTUSED, 0);
+
+    eeprom_update_byte((uint8_t *)EEPROM_CRASH_COUNT_X, 0);
+    eeprom_update_byte((uint8_t *)EEPROM_CRASH_COUNT_Y, 0);
+    eeprom_update_byte((uint8_t *)EEPROM_FERROR_COUNT, 0);
+    eeprom_update_byte((uint8_t *)EEPROM_POWER_COUNT, 0);
+
+    eeprom_update_word((uint16_t *)EEPROM_CRASH_COUNT_X_TOT, 0);
+    eeprom_update_word((uint16_t *)EEPROM_CRASH_COUNT_Y_TOT, 0);
+    eeprom_update_word((uint16_t *)EEPROM_FERROR_COUNT_TOT, 0);
+    eeprom_update_word((uint16_t *)EEPROM_POWER_COUNT_TOT, 0);
+
+    eeprom_update_word((uint16_t *)EEPROM_MMU_FAIL_TOT, 0);
+    eeprom_update_word((uint16_t *)EEPROM_MMU_LOAD_FAIL_TOT, 0);
+    eeprom_update_byte((uint8_t *)EEPROM_MMU_FAIL, 0);
+    eeprom_update_byte((uint8_t *)EEPROM_MMU_LOAD_FAIL, 0);
+}
+
 // Factory reset function
 // This function is used to erase parts or whole EEPROM memory which is used for storing calibration and and so on.
 // Level input parameter sets depth of reset
-int  er_progress = 0;
 static void factory_reset(char level)
-{	
+{
 	lcd_clear();
-    switch (level) {
-                   
-        // Level 0: Language reset
-        case 0:
-      Sound_MakeCustom(100,0,false);
-			lang_reset();
-            break;
-         
-		//Level 1: Reset statistics
-		case 1:
-      Sound_MakeCustom(100,0,false);
-			eeprom_update_dword((uint32_t *)EEPROM_TOTALTIME, 0);
-			eeprom_update_dword((uint32_t *)EEPROM_FILAMENTUSED, 0);
+	Sound_MakeCustom(100,0,false);
+	switch (level) {
 
-			eeprom_update_byte((uint8_t *)EEPROM_CRASH_COUNT_X, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_CRASH_COUNT_Y, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_FERROR_COUNT, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_POWER_COUNT, 0);
+	case 0: // Level 0: Language reset
+		lang_reset();
+		break;
 
-			eeprom_update_word((uint16_t *)EEPROM_CRASH_COUNT_X_TOT, 0);
-			eeprom_update_word((uint16_t *)EEPROM_CRASH_COUNT_Y_TOT, 0);
-			eeprom_update_word((uint16_t *)EEPROM_FERROR_COUNT_TOT, 0);
-			eeprom_update_word((uint16_t *)EEPROM_POWER_COUNT_TOT, 0);
+	case 1: //Level 1: Reset statistics
+		factory_reset_stats();
+		lcd_menu_statistics();
+		break;
 
-			eeprom_update_word((uint16_t *)EEPROM_MMU_FAIL_TOT, 0);
-			eeprom_update_word((uint16_t *)EEPROM_MMU_LOAD_FAIL_TOT, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_MMU_FAIL, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_MMU_LOAD_FAIL, 0);
+	case 2: // Level 2: Prepare for shipping
+		factory_reset_stats();
+		// [[fallthrough]] // there is no break intentionally
 
-
-			lcd_menu_statistics();
-            
-			break;
-
-        // Level 2: Prepare for shipping
-        case 2:
-			//lcd_puts_P(PSTR("Factory RESET"));
-            //lcd_puts_at_P(1,2,PSTR("Shipping prep"));
-            
-            // Force language selection at the next boot up.
-			lang_reset();
-            // Force the "Follow calibration flow" message at the next boot up.
-            calibration_status_store(CALIBRATION_STATUS_Z_CALIBRATION);
-			eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 1); //run wizard
-			farm_mode = false;
-			eeprom_update_byte((uint8_t*)EEPROM_FARM_MODE, farm_mode);
-
-            eeprom_update_dword((uint32_t *)EEPROM_TOTALTIME, 0);
-            eeprom_update_dword((uint32_t *)EEPROM_FILAMENTUSED, 0);
-
-			eeprom_update_byte((uint8_t *)EEPROM_CRASH_COUNT_X, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_CRASH_COUNT_Y, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_FERROR_COUNT, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_POWER_COUNT, 0);
-
-            eeprom_update_word((uint16_t *)EEPROM_CRASH_COUNT_X_TOT, 0);
-            eeprom_update_word((uint16_t *)EEPROM_CRASH_COUNT_Y_TOT, 0);
-            eeprom_update_word((uint16_t *)EEPROM_FERROR_COUNT_TOT, 0);
-            eeprom_update_word((uint16_t *)EEPROM_POWER_COUNT_TOT, 0);
-
-			eeprom_update_word((uint16_t *)EEPROM_MMU_FAIL_TOT, 0);
-			eeprom_update_word((uint16_t *)EEPROM_MMU_LOAD_FAIL_TOT, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_MMU_FAIL, 0);
-			eeprom_update_byte((uint8_t *)EEPROM_MMU_LOAD_FAIL, 0);
+	case 4: // Level 4: Preparation after being serviced
+		// Force language selection at the next boot up.
+		lang_reset();
+		// Force the "Follow calibration flow" message at the next boot up.
+		calibration_status_store(CALIBRATION_STATUS_Z_CALIBRATION);
+		eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 2); //run wizard
+		farm_mode = false;
+		eeprom_update_byte((uint8_t*)EEPROM_FARM_MODE, farm_mode);
 
 #ifdef FILAMENT_SENSOR
-			fsensor_enable();
-            fsensor_autoload_set(true);
+		fsensor_enable();
+		fsensor_autoload_set(true);
 #endif //FILAMENT_SENSOR
-      Sound_MakeCustom(100,0,false);   
-			//_delay_ms(2000);
-            break;
+		break;
 
-			// Level 3: erase everything, whole EEPROM will be set to 0xFF
-
-		case 3:
-			lcd_puts_P(PSTR("Factory RESET"));
-			lcd_puts_at_P(1, 2, PSTR("ERASING all data"));
-
-      Sound_MakeCustom(100,0,false);
-			er_progress = 0;
-			lcd_puts_at_P(3, 3, PSTR("      "));
-			lcd_set_cursor(3, 3);
-			lcd_print(er_progress);
-
-			// Erase EEPROM
-			for (int i = 0; i < 4096; i++) {
-				eeprom_update_byte((uint8_t*)i, 0xFF);
-
-				if (i % 41 == 0) {
-					er_progress++;
-					lcd_puts_at_P(3, 3, PSTR("      "));
-					lcd_set_cursor(3, 3);
-					lcd_print(er_progress);
-					lcd_puts_P(PSTR("%"));
-				}
-
-			}
-			softReset();
+	case 3:
+		menu_progressbar_init(EEPROM_TOP, PSTR("ERASING all data"));
+		// Erase EEPROM
+		for (uint16_t i = 0; i < EEPROM_TOP; i++) {
+			eeprom_update_byte((uint8_t*)i, 0xFF);
+			menu_progressbar_update(i);
+		}
+		menu_progressbar_finish();
+		softReset();
+		break;
 
 
-			break;
-		case 4:
-			bowden_menu();
-			break;
-        
-        default:
-            break;
-    }
-    
-
+#ifdef SNMM
+	case 5:
+		bowden_menu();
+		break;
+#endif
+	default:
+		break;
+	}
 }
 
 extern "C" {
@@ -857,19 +816,15 @@ void factory_reset()
 		{
 			lcd_clear();
 
-
 			lcd_puts_P(PSTR("Factory RESET"));
 
-
 			SET_OUTPUT(BEEPER);
-  if(eSoundMode!=e_SOUND_MODE_SILENT)
-			WRITE(BEEPER, HIGH);
+			if(eSoundMode!=e_SOUND_MODE_SILENT)
+				WRITE(BEEPER, HIGH);
 
 			while (!READ(BTN_ENC));
 
 			WRITE(BEEPER, LOW);
-
-
 
 			_delay_ms(2000);
 
@@ -877,10 +832,11 @@ void factory_reset()
 			factory_reset(level);
 
 			switch (level) {
-			case 0: _delay_ms(0); break;
-			case 1: _delay_ms(0); break;
-			case 2: _delay_ms(0); break;
-			case 3: _delay_ms(0); break;
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+			case 4: _delay_ms(0); break;
 			}
 
 		}
@@ -1593,7 +1549,7 @@ void setup()
 	  lcd_show_fullscreen_message_and_wait_P(_i("Old settings found. Default PID, Esteps etc. will be set.")); //if EEPROM version or printer type was changed, inform user that default setting were loaded////MSG_DEFAULT_SETTINGS_LOADED c=20 r=5
 	  Config_StoreSettings();
   }
-  if (eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE) == 1) {
+  if (eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE) >= 1) {
 	  lcd_wizard(WizState::Run);
   }
   if (eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE) == 0) { //dont show calibration status messages if wizard is currently active
@@ -1855,8 +1811,7 @@ void loop()
 	}
     
 #ifdef FANCHECK
-    if (fan_check_error && isPrintPaused)
-    {
+    if (fan_check_error && isPrintPaused && !IS_SD_PRINTING) {
         KEEPALIVE_STATE(PAUSED_FOR_USER);
         host_keepalive(); //prevent timeouts since usb processing is disabled until print is resumed. This is for a crude way of pausing a print on all hosts.
     }
@@ -2466,38 +2421,44 @@ void refresh_cmd_timeout(void)
 }
 
 #ifdef FWRETRACT
-  void retract(bool retracting, bool swapretract = false) {
+void retract(bool retracting, bool swapretract = false) {
+    // Perform FW retraction, just if needed, but behave as if the move has never took place in
+    // order to keep E/Z coordinates unchanged. This is done by manipulating the internal planner
+    // position, which requires a sync
     if(retracting && !retracted[active_extruder]) {
-      destination[X_AXIS]=current_position[X_AXIS];
-      destination[Y_AXIS]=current_position[Y_AXIS];
-      destination[Z_AXIS]=current_position[Z_AXIS];
-      destination[E_AXIS]=current_position[E_AXIS];
-      current_position[E_AXIS]+=(swapretract?retract_length_swap:cs.retract_length)*float(extrudemultiply)*0.01f;
-      plan_set_e_position(current_position[E_AXIS]);
-      float oldFeedrate = feedrate;
-      feedrate=cs.retract_feedrate*60;
-      retracted[active_extruder]=true;
-      prepare_move();
-      current_position[Z_AXIS]-=cs.retract_zlift;
-      plan_set_position_curposXYZE();
-      prepare_move();
-      feedrate = oldFeedrate;
+        st_synchronize();
+        set_destination_to_current();
+        current_position[E_AXIS]+=(swapretract?retract_length_swap:cs.retract_length)*float(extrudemultiply)*0.01f;
+        plan_set_e_position(current_position[E_AXIS]);
+        float oldFeedrate = feedrate;
+        feedrate=cs.retract_feedrate*60;
+        retracted[active_extruder]=true;
+        prepare_move();
+        if(cs.retract_zlift) {
+            st_synchronize();
+            current_position[Z_AXIS]-=cs.retract_zlift;
+            plan_set_position_curposXYZE();
+            prepare_move();
+        }
+        feedrate = oldFeedrate;
     } else if(!retracting && retracted[active_extruder]) {
-      destination[X_AXIS]=current_position[X_AXIS];
-      destination[Y_AXIS]=current_position[Y_AXIS];
-      destination[Z_AXIS]=current_position[Z_AXIS];
-      destination[E_AXIS]=current_position[E_AXIS];
-      current_position[Z_AXIS]+=cs.retract_zlift;
-      plan_set_position_curposXYZE();
-      current_position[E_AXIS]-=(swapretract?(retract_length_swap+retract_recover_length_swap):(cs.retract_length+cs.retract_recover_length))*float(extrudemultiply)*0.01f;
-      plan_set_e_position(current_position[E_AXIS]);
-      float oldFeedrate = feedrate;
-      feedrate=cs.retract_recover_feedrate*60;
-      retracted[active_extruder]=false;
-      prepare_move();
-      feedrate = oldFeedrate;
+        st_synchronize();
+        set_destination_to_current();
+        float oldFeedrate = feedrate;
+        feedrate=cs.retract_recover_feedrate*60;
+        if(cs.retract_zlift) {
+            current_position[Z_AXIS]+=cs.retract_zlift;
+            plan_set_position_curposXYZE();
+            prepare_move();
+            st_synchronize();
+        }
+        current_position[E_AXIS]-=(swapretract?(retract_length_swap+retract_recover_length_swap):(cs.retract_length+cs.retract_recover_length))*float(extrudemultiply)*0.01f;
+        plan_set_e_position(current_position[E_AXIS]);
+        retracted[active_extruder]=false;
+        prepare_move();
+        feedrate = oldFeedrate;
     }
-  } //retract
+} //retract
 #endif //FWRETRACT
 
 void trace() {
@@ -2752,8 +2713,7 @@ static void gcode_G28(bool home_x_axis, long home_x_value, bool home_y_axis, lon
       current_position[Z_AXIS] = st_get_position_mm(Z_AXIS);
 #endif
 
-      // Reset baby stepping to zero, if the babystepping has already been loaded before. The babystepsTodo value will be
-      // consumed during the first movements following this statement.
+      // Reset baby stepping to zero, if the babystepping has already been loaded before.
       if (home_z)
         babystep_undo();
 
@@ -3766,12 +3726,13 @@ There are reasons why some G Codes aren't in numerical order.
 void process_commands()
 {
 #ifdef FANCHECK
-	if(fan_check_error == EFCE_DETECTED){
-		fan_check_error = EFCE_REPORTED;
-		// SERIAL_PROTOCOLLNRPGM(MSG_OCTOPRINT_PAUSED);
-		lcd_pause_print();
-		cmdqueue_serial_disabled = true;
-	}
+    if(fan_check_error == EFCE_DETECTED) {
+        fan_check_error = EFCE_REPORTED;
+        if (is_usb_printing)
+            lcd_pause_usb_print();
+        else
+            lcd_pause_print();
+    }
 #endif
 
 	if (!buflen) return; //empty command
@@ -3802,31 +3763,90 @@ void process_commands()
   float tmp_motor_loud[3] = DEFAULT_PWM_MOTOR_CURRENT_LOUD;
   int8_t SilentMode;
 #endif
-  /*!
+    /*!
+
+    ---------------------------------------------------------------------------------
+    ### M117 - Display Message <a href="https://reprap.org/wiki/G-code#M117:_Display_Message">M117: Display Message</a>
+    This causes the given message to be shown in the status line on an attached LCD.
+    It is processed early as to allow printing messages that contain G, M, N or T.
+
+    ---------------------------------------------------------------------------------
+    ### Special internal commands
+    These are used by internal functions to process certain actions in the right order. Some of these are also usable by the user.
+    They are processed early as the commands are complex (strings).
+    These are only available on the MK3(S) as these require TMC2130 drivers:
+        - CRASH DETECTED
+        - CRASH RECOVER
+        - CRASH_CANCEL
+        - TMC_SET_WAVE
+        - TMC_SET_STEP
+        - TMC_SET_CHOP
+    */
+    if (code_seen_P(PSTR("M117"))) //moved to highest priority place to be able to to print strings which includes "G", "PRUSA" and "^"
+    {
+        starpos = (strchr(strchr_pointer + 5, '*'));
+        if (starpos != NULL)
+            *(starpos) = '\0';
+        lcd_setstatus(strchr_pointer + 5);
+        custom_message_type = CustomMsg::MsgUpdate;
+    }
+
+    /*!
+    ### M0, M1 - Stop the printer <a href="https://reprap.org/wiki/G-code#M0:_Stop_or_Unconditional_stop">M0: Stop or Unconditional stop</a>
+    #### Usage
+
+      M0 [P<ms<] [S<sec>] [string]
+      M1 [P<ms>] [S<sec>] [string] 
+
+    #### Parameters
   
-  ---------------------------------------------------------------------------------
-  ### M117 - Display Message <a href="https://reprap.org/wiki/G-code#M117:_Display_Message">M117: Display Message</a>
-  This causes the given message to be shown in the status line on an attached LCD.
-  It is processed early as to allow printing messages that contain G, M, N or T.
-  
-  ---------------------------------------------------------------------------------
-  ### Special internal commands
-  These are used by internal functions to process certain actions in the right order. Some of these are also usable by the user.
-  They are processed early as the commands are complex (strings).
-  These are only available on the MK3(S) as these require TMC2130 drivers:
-    - CRASH DETECTED
-    - CRASH RECOVER
-    - CRASH_CANCEL
-    - TMC_SET_WAVE
-    - TMC_SET_STEP
-    - TMC_SET_CHOP
- */
-  if (code_seen_P(PSTR("M117"))) { //moved to highest priority place to be able to to print strings which includes "G", "PRUSA" and "^"
-	  starpos = (strchr(strchr_pointer + 5, '*'));
-	  if (starpos != NULL)
-		  *(starpos) = '\0';
-	  lcd_setstatus(strchr_pointer + 5);
-  }
+    - `P<ms>`  - Expire time, in milliseconds
+    - `S<sec>` - Expire time, in seconds
+    - `string` - Must for M1 and optional for M0 message to display on the LCD
+    */
+
+    else if (code_seen_P(PSTR("M0")) || code_seen_P(PSTR("M1 "))) {// M0 and M1 - (Un)conditional stop - Wait for user button press on LCD
+        char *src = strchr_pointer + 2;
+        codenum = 0;
+        bool hasP = false, hasS = false;
+        if (code_seen('P')) {
+            codenum = code_value(); // milliseconds to wait
+            hasP = codenum > 0;
+        }
+        if (code_seen('S')) {
+            codenum = code_value() * 1000; // seconds to wait
+            hasS = codenum > 0;
+        }
+        starpos = strchr(src, '*');
+        if (starpos != NULL) *(starpos) = '\0';
+        while (*src == ' ') ++src;
+        custom_message_type = CustomMsg::M0Wait;
+        if (!hasP && !hasS && *src != '\0') {
+            lcd_setstatus(src);
+        } else {
+            LCD_MESSAGERPGM(_i("Wait for user..."));////MSG_USERWAIT
+        }
+        lcd_ignore_click();				//call lcd_ignore_click aslo for else ???
+        st_synchronize();
+        previous_millis_cmd = _millis();
+        if (codenum > 0) {
+            codenum += _millis();  // keep track of when we started waiting
+            KEEPALIVE_STATE(PAUSED_FOR_USER);
+            while(_millis() < codenum && !lcd_clicked()) {
+                manage_heater();
+                manage_inactivity(true);
+                lcd_update(0);
+            }
+            KEEPALIVE_STATE(IN_HANDLER);
+            lcd_ignore_click(false);
+        } else {
+            marlin_wait_for_click();
+        }
+        if (IS_SD_PRINTING)
+            custom_message_type = CustomMsg::Status;
+        else
+            LCD_MESSAGERPGM(_T(WELCOME_MSG));
+    }
 
 #ifdef TMC2130
 	else if (strncmp_P(CMDBUFFER_CURRENT_STRING, PSTR("CRASH_"), 6) == 0)
@@ -4356,21 +4376,22 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
 		if (total_filament_used > ((current_position[E_AXIS] - destination[E_AXIS]) * 100)) { //protection against total_filament_used overflow
 			total_filament_used = total_filament_used + ((destination[E_AXIS] - current_position[E_AXIS]) * 100);
 		}
-          #ifdef FWRETRACT
-            if(cs.autoretract_enabled)
+
+#ifdef FWRETRACT
+        if(cs.autoretract_enabled) {
             if( !(code_seen('X') || code_seen('Y') || code_seen('Z')) && code_seen('E')) {
-              float echange=destination[E_AXIS]-current_position[E_AXIS];
-
-              if((echange<-MIN_RETRACT && !retracted[active_extruder]) || (echange>MIN_RETRACT && retracted[active_extruder])) { //move appears to be an attempt to retract or recover
-                  current_position[E_AXIS] = destination[E_AXIS]; //hide the slicer-generated retract/recover from calculations
-                  plan_set_e_position(current_position[E_AXIS]); //AND from the planner
-                  retract(!retracted[active_extruder]);
-                  return;
-              }
-
-
+                float echange=destination[E_AXIS]-current_position[E_AXIS];
+                if((echange<-MIN_RETRACT && !retracted[active_extruder]) || (echange>MIN_RETRACT && retracted[active_extruder])) { //move appears to be an attempt to retract or recover
+                    st_synchronize();
+                    current_position[E_AXIS] = destination[E_AXIS]; //hide the slicer-generated retract/recover from calculations
+                    plan_set_e_position(current_position[E_AXIS]); //AND from the planner
+                    retract(!retracted[active_extruder]);
+                    return;
+                }
             }
-          #endif //FWRETRACT
+        }
+#endif //FWRETRACT
+
         prepare_move();
         //ClearToSend();
       }
@@ -4438,9 +4459,9 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
         lcd_update(0);
       }
       break;
-      #ifdef FWRETRACT
-      
 
+
+#ifdef FWRETRACT
     /*!
 	### G10 - Retract <a href="https://reprap.org/wiki/G-code#G10:_Retract">G10: Retract</a>
 	Retracts filament according to settings of `M207`
@@ -4453,7 +4474,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
         retract(true);
        #endif
       break;
-      
+
 
     /*!
 	### G11 - Retract recover <a href="https://reprap.org/wiki/G-code#G11:_Unretract">G11: Unretract</a>
@@ -4466,8 +4487,8 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
         retract(false);
        #endif 
       break;
-      #endif //FWRETRACT
-    
+#endif //FWRETRACT
+
 
     /*!
 	### G21 - Sets Units to Millimters <a href="https://reprap.org/wiki/G-code#G21:_Set_Units_to_Millimeters">G21: Set Units to Millimeters</a>
@@ -4727,6 +4748,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
     */
     case 30: 
         {
+            homing_flag = true;
             st_synchronize();
             // TODO: make sure the bed_level_rotation_matrix is identity or the planner will get set incorectly
             int l_feedmultiply = setup_for_endstop_move();
@@ -4738,6 +4760,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
 			printf_P(_N("%S X: %.5f Y: %.5f Z: %.5f\n"), _T(MSG_BED), _x, _y, _z);
 
             clean_up_after_endstop_move(l_feedmultiply);
+            homing_flag = false;
         }
         break;
 	
@@ -4828,6 +4851,8 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
                 break;
             }
         }
+
+        homing_flag = true; // keep homing on to avoid babystepping while the LCD is enabled
         lcd_update_enable(true);
         KEEPALIVE_STATE(NOT_BUSY); //no need to print busy messages as we print current temperatures periodicaly
         SERIAL_ECHOLNPGM("PINDA probe calibration start");
@@ -4872,6 +4897,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
         bool find_z_result = find_bed_induction_sensor_point_z(-1.f);
         if (find_z_result == false) {
             lcd_temp_cal_show_result(find_z_result);
+            homing_flag = false;
             break;
         }
         zero_z = current_position[Z_AXIS];
@@ -4922,9 +4948,9 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
             printf_P(_N("\nPINDA temperature: %.1f Z shift (mm): %.3f"), current_temperature_pinda, current_position[Z_AXIS] - zero_z);
 
             EEPROM_save_B(EEPROM_PROBE_TEMP_SHIFT + i * 2, &z_shift);
-
         }
         lcd_temp_cal_show_result(true);
+        homing_flag = false;
 
 #else //PINDA_THERMISTOR
 
@@ -5134,8 +5160,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
 
 		mbl.reset(); //reset mesh bed leveling
 
-					 // Reset baby stepping to zero, if the babystepping has already been loaded before. The babystepsTodo value will be
-					 // consumed during the first movements following this statement.
+		// Reset baby stepping to zero, if the babystepping has already been loaded before.
 		babystep_undo();
 
 		// Cycle through all points and probe them
@@ -5686,59 +5711,9 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
     {
 
     /*!
-	### M0, M1 - Stop the printer <a href="https://reprap.org/wiki/G-code#M0:_Stop_or_Unconditional_stop">M0: Stop or Unconditional stop</a>
-    */
-    case 0: // M0 - Unconditional stop - Wait for user button press on LCD
-    case 1: // M1 - Conditional stop - Wait for user button press on LCD
-    {
-      char *src = strchr_pointer + 2;
-
-      codenum = 0;
-
-      bool hasP = false, hasS = false;
-      if (code_seen('P')) {
-        codenum = code_value(); // milliseconds to wait
-        hasP = codenum > 0;
-      }
-      if (code_seen('S')) {
-        codenum = code_value() * 1000; // seconds to wait
-        hasS = codenum > 0;
-      }
-      starpos = strchr(src, '*');
-      if (starpos != NULL) *(starpos) = '\0';
-      while (*src == ' ') ++src;
-      if (!hasP && !hasS && *src != '\0') {
-        lcd_setstatus(src);
-      } else {
-        LCD_MESSAGERPGM(_i("Wait for user..."));////MSG_USERWAIT
-      }
-
-      lcd_ignore_click();				//call lcd_ignore_click aslo for else ???
-      st_synchronize();
-      previous_millis_cmd = _millis();
-      if (codenum > 0){
-        codenum += _millis();  // keep track of when we started waiting
-		KEEPALIVE_STATE(PAUSED_FOR_USER);
-        while(_millis() < codenum && !lcd_clicked()){
-          manage_heater();
-          manage_inactivity(true);
-          lcd_update(0);
-        }
-		KEEPALIVE_STATE(IN_HANDLER);
-        lcd_ignore_click(false);
-      }else{
-        marlin_wait_for_click();
-      }
-      if (IS_SD_PRINTING)
-        LCD_MESSAGERPGM(_T(MSG_RESUMING_PRINT));
-      else
-        LCD_MESSAGERPGM(_T(WELCOME_MSG));
-    }
-    break;
-
-    /*!
 	### M17 - Enable all axes <a href="https://reprap.org/wiki/G-code#M17:_Enable.2FPower_all_stepper_motors">M17: Enable/Power all stepper motors</a>
     */
+
     case 17:
         LCD_MESSAGERPGM(_i("No move."));////MSG_NO_MOVE
         enable_x();
@@ -7337,8 +7312,9 @@ Sigma_Exit:
         if(code_seen(axis_codes[i])) cs.add_homing[i] = code_value();
       }
       break;
-    #ifdef FWRETRACT
 
+
+#ifdef FWRETRACT
     /*!
 	### M207 - Set firmware retraction <a href="https://reprap.org/wiki/G-code#M207:_Set_retract_length">M207: Set retract length</a>
 	#### Usage
@@ -7436,7 +7412,9 @@ Sigma_Exit:
       }
 
     }break;
-    #endif // FWRETRACT
+#endif // FWRETRACT
+
+
     #if EXTRUDERS > 1
 
     /*!
@@ -8142,35 +8120,34 @@ Sigma_Exit:
     /*!
     ### M25 - Pause SD print <a href="https://reprap.org/wiki/G-code#M25:_Pause_SD_print">M25: Pause SD print</a>
     */
-	case 25:
-	case 601:
-	{
-        if (!isPrintPaused)
-        {
+    case 25:
+    case 601:
+    {
+        if (!isPrintPaused) {
             st_synchronize();
             ClearToSend(); //send OK even before the command finishes executing because we want to make sure it is not skipped because of cmdqueue_pop_front();
             cmdqueue_pop_front(); //trick because we want skip this command (M601) after restore
             lcd_pause_print();
         }
-	}
-	break;
+    }
+    break;
 
     /*!
-	### M602 - Resume print <a href="https://reprap.org/wiki/G-code#M602:_Resume_print">M602: Resume print</a>
+    ### M602 - Resume print <a href="https://reprap.org/wiki/G-code#M602:_Resume_print">M602: Resume print</a>
     */
-	case 602: {
-	  if (isPrintPaused)
-          lcd_resume_print();
-	}
-	break;
+    case 602:
+    {
+        if (isPrintPaused) lcd_resume_print();
+    }
+    break;
 
     /*!
     ### M603 - Stop print <a href="https://reprap.org/wiki/G-code#M603:_Stop_print">M603: Stop print</a>
     */
-	case 603: {
-		lcd_print_stop();
-	}
-	break;
+    case 603: {
+        lcd_print_stop();
+    }
+    break;
 
 #ifdef PINDA_THERMISTOR
     /*!
@@ -9876,7 +9853,7 @@ void manage_inactivity_IR_ANALOG_Check(uint16_t &nFSCheckCount, ClFsensorPCB isV
 void manage_inactivity(bool ignore_stepper_queue/*=false*/) //default argument set in Marlin.h
 {
 #ifdef FILAMENT_SENSOR
-bool bInhibitFlag;
+bool bInhibitFlag = false;
 #ifdef IR_SENSOR_ANALOG
 static uint16_t nFSCheckCount=0;
 #endif // IR_SENSOR_ANALOG
@@ -9884,16 +9861,11 @@ static uint16_t nFSCheckCount=0;
 	if (mmu_enabled == false)
 	{
 //-//		if (mcode_in_progress != 600) //M600 not in progress
-#ifdef PAT9125
-		bInhibitFlag=(menu_menu==lcd_menu_extruder_info); // Support::ExtruderInfo menu active
-#endif // PAT9125
-#ifdef IR_SENSOR
-		bInhibitFlag=(menu_menu==lcd_menu_show_sensors_state); // Support::SensorInfo menu active
+		if (!PRINTER_ACTIVE) bInhibitFlag=(menu_menu==lcd_menu_show_sensors_state); //Block Filament sensor actions if PRINTER is not active and Support::SensorInfo menu active
 #ifdef IR_SENSOR_ANALOG
-		bInhibitFlag=bInhibitFlag||bMenuFSDetect; // Settings::HWsetup::FSdetect menu active
+		bInhibitFlag=bInhibitFlag||bMenuFSDetect; // Block Filament sensor actions if Settings::HWsetup::FSdetect menu active
 #endif // IR_SENSOR_ANALOG
-#endif // IR_SENSOR
-		if ((mcode_in_progress != 600) && (eFilamentAction != FilamentAction::AutoLoad) && (!bInhibitFlag) && (menu_menu != lcd_move_e)) //M600 not in progress, preHeat @ autoLoad menu not active, Support::ExtruderInfo/SensorInfo menu not active
+		if ((mcode_in_progress != 600) && (eFilamentAction != FilamentAction::AutoLoad) && (!bInhibitFlag) && (menu_menu != lcd_move_e)) //M600 not in progress, preHeat @ autoLoad menu not active
 		{
 			if (!moves_planned() && !IS_SD_PRINTING && !is_usb_printing && (lcd_commands_type != LcdCommands::Layer1Cal) && ! eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE))
 			{
@@ -11450,7 +11422,7 @@ void restore_print_from_eeprom(bool mbl_was_active) {
 		}
 		dir_name[8] = '\0';
 		MYSERIAL.println(dir_name);
-		// strcpy(dir_names[i], dir_name);
+		// strcpy(card.dir_names[i], dir_name);
 		card.chdir(dir_name, false);
 	}
 
