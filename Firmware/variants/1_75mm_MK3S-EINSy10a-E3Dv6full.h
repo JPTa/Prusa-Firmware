@@ -19,7 +19,7 @@
 #define DEVELOPER
 
 // Printer name
-#define CUSTOM_MENDEL_NAME "JTa Bear-MK3S" //Kuo can put your own printer name here
+#define CUSTOM_MENDEL_NAME "JTa BearExxa+" //Kuo can put your own printer name here
 
 // Electronics
 #define MOTHERBOARD BOARD_EINSY_1_0a
