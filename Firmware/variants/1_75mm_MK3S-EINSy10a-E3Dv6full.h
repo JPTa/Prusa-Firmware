@@ -20,7 +20,7 @@
 #define DEVELOPER
 
 // Printer name
-#define CUSTOM_MENDEL_NAME "JTa MK3S" //Kuo can put your own printer name here
+#define CUSTOM_MENDEL_NAME "JTa Bear-MK3S" //Kuo can put your own printer name here
 
 // Electronics
 #define MOTHERBOARD BOARD_EINSY_1_0a
@@ -33,7 +33,7 @@
 
 
 // Uncomment the below for the E3D PT100 temperature sensor (with or without PT100 Amplifier)
-//#define E3D_PT100_EXTRUDER_WITH_AMP
+#define E3D_PT100_EXTRUDER_WITH_AMP
 //#define E3D_PT100_EXTRUDER_NO_AMP
 //#define E3D_PT100_BED_WITH_AMP
 //#define E3D_PT100_BED_NO_AMP
