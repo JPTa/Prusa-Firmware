@@ -649,6 +649,11 @@
   #define LOAD_FILAMENT_RATE_1 400
   #define LOAD_FILAMENT_DIST_2 20  // 10 mm less for Skele
   #define LOAD_FILAMENT_RATE_2 300
+#elif defined(BEAR_EXXA)
+  #define LOAD_FILAMENT_DIST_1 40  //JTa: BearExxa load
+  #define LOAD_FILAMENT_RATE_1 400
+  #define LOAD_FILAMENT_DIST_2 36  // 6 mm more for BearExxa
+  #define LOAD_FILAMENT_RATE_2 300
 #else
   #define LOAD_FILAMENT_DIST_1 40  //Kuo Prusa default load
   #define LOAD_FILAMENT_RATE_1 400
@@ -665,6 +670,15 @@
   #define UNLOAD_FILAMENT_DIST_2 -15
   #define UNLOAD_FILAMENT_RATE_2 1000
   #define UNLOAD_FILAMENT_DIST_3 -40 //20 mm farther
+  #define UNLOAD_FILAMENT_RATE_3 1000
+#elif defined(BEAR_EXXA)
+  #define UNLOAD_FILAMENT_DIST_0 3  //Kuo extrude slightly first to form finer tip
+  #define UNLOAD_FILAMENT_RATE_0 60
+  #define UNLOAD_FILAMENT_DIST_1 -45  //JTA BearExxa unload
+  #define UNLOAD_FILAMENT_RATE_1 5200
+  #define UNLOAD_FILAMENT_DIST_2 -15
+  #define UNLOAD_FILAMENT_RATE_2 1000
+  #define UNLOAD_FILAMENT_DIST_3 -30 //10 mm farther
   #define UNLOAD_FILAMENT_RATE_3 1000
 #else
   #define UNLOAD_FILAMENT_DIST_0 3  //Kuo extrude slightly first to form finer tip
@@ -697,6 +711,10 @@
  #define FILAMENTCHANGE_FIRSTFEED 80 //E distance in mm for fast filament loading sequence used used in filament change (M600)
  #define FILAMENTCHANGE_FINALFEED 25  //Kuo BMG FILAMENTCHANGE_FINALFEED
  #define FILAMENTCHANGE_FINALRETRACT -95
+#elif defined(BEAR_EXXA)
+ #define FILAMENTCHANGE_FIRSTFEED 75 //E distance in mm for fast filament loading sequence used used in filament change (M600)
+ #define FILAMENTCHANGE_FINALFEED 25  //Kuo BMG FILAMENTCHANGE_FINALFEED
+ #define FILAMENTCHANGE_FINALRETRACT -90
 #else
  #define FILAMENTCHANGE_FIRSTFEED 70 //E distance in mm for fast filament loading sequence used used in filament change (M600)
  #define FILAMENTCHANGE_FINALFEED 25 //default E distance in mm for slow filament loading sequence used used in filament change (M600) and filament load (M701) 
