@@ -2,7 +2,6 @@
 #define CONFIGURATION_PRUSA_H
 
 #include <limits.h>
-//-//
 #include "printers.h"
 /*------------------------------------
  GENERAL SETTINGS
@@ -90,6 +89,7 @@
 //Reversion back from geared extruder requires sending M92 E280 & M500 to printer
 //
 //#define SKELESTRUDER // Uncomment if you have a skelestruder. Applies the patches for load distances and Z height.
+#define BEAR_EXXA // Uncomment if you have Bear Exxa. Sets load distances and Z height.
 //#define BONDTECH_PRUSA_UPGRADE_MK3 //Kuo Uncomment for Bondtech MK3 extruder upgrade. 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define BONDTECH_PRUSA_UPGRADE_MK3S //Kuo Uncomment for Bondtech MK3S extruder upgrade. (Note the S!!!!) 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define EXTRUDER_GEARRATIO_30 //Kuo Uncomment for extruder with gear ratio 3.0. 
@@ -175,12 +175,14 @@
   #else
     #define Z_MAX_POS 220
   #endif
-#elif defined(BONDTECH_PRUSA_UPGRADE_MK3) //kuo BMG height
+#elif defined(BONDTECH_PRUSA_UPGRADE_MK3)  //kuo BMG height
   #define Z_MAX_POS 205
-#elif defined(BONDTECH_PRUSA_UPGRADE_MK3S)//kuo BMG height
+#elif defined(BONDTECH_PRUSA_UPGRADE_MK3S) //kuo BMG height
   #define Z_MAX_POS 205
-#elif defined(E3D_VOLCANO)//kuo Volcano height
+#elif defined(E3D_VOLCANO) //kuo Volcano height
   #define Z_MAX_POS 202
+#elif defined(BEAR_EXXA) // JTa BearExxa height
+  #define Z_MAX_POS 204
 #else
   #define Z_MAX_POS 210 //default height
 #endif

@@ -2,7 +2,6 @@
 #define CONFIGURATION_PRUSA_H
 
 #include <limits.h>
-//-//
 #include "printers.h"
 /*------------------------------------
  GENERAL SETTINGS
@@ -90,6 +89,7 @@
 //Reversion back from geared extruder requires sending M92 E280 & M500 to printer
 //
 #define SKELESTRUDER // Uncomment if you have a skelestruder. Applies the patches for load distances and Z height.
+//#define BEAR_EXXA // Uncomment if you have Bear Exxa. Sets load distances and Z height.
 //#define BONDTECH_PRUSA_UPGRADE_MK3 //Kuo Uncomment for Bondtech MK3 extruder upgrade. 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define BONDTECH_PRUSA_UPGRADE_MK3S //Kuo Uncomment for Bondtech MK3S extruder upgrade. (Note the S!!!!) 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define EXTRUDER_GEARRATIO_30 //Kuo Uncomment for extruder with gear ratio 3.0. 
@@ -175,12 +175,14 @@
   #else
     #define Z_MAX_POS 220
   #endif
-#elif defined(BONDTECH_PRUSA_UPGRADE_MK3) //kuo BMG height
+#elif defined(BONDTECH_PRUSA_UPGRADE_MK3)  //kuo BMG height
   #define Z_MAX_POS 205
-#elif defined(BONDTECH_PRUSA_UPGRADE_MK3S)//kuo BMG height
+#elif defined(BONDTECH_PRUSA_UPGRADE_MK3S) //kuo BMG height
   #define Z_MAX_POS 205
-#elif defined(E3D_VOLCANO)//kuo Volcano height
+#elif defined(E3D_VOLCANO) //kuo Volcano height
   #define Z_MAX_POS 202
+#elif defined(BEAR_EXXA) // JTa BearExxa height
+  #define Z_MAX_POS 204
 #else
   #define Z_MAX_POS 210 //default height
 #endif
@@ -232,8 +234,9 @@
 #define DEFAULT_MAX_ACCELERATION_SILENT     {960, 960, 200, 5000}    // (mm/sec^2) max acceleration (M201), silent mode
 
 
-#define DEFAULT_ACCELERATION          1250   // X, Y, Z and E max acceleration in mm/s^2 for printing moves (M204S)
-#define DEFAULT_RETRACT_ACCELERATION  1250   // X, Y, Z and E max acceleration in mm/s^2 for retracts (M204T)
+#define DEFAULT_ACCELERATION          1250   // X, Y, Z and E max acceleration in mm/s^2 for printing moves (M204P)
+#define DEFAULT_RETRACT_ACCELERATION  1250   // X, Y, Z and E max acceleration in mm/s^2 for retracts (M204R)
+#define DEFAULT_TRAVEL_ACCELERATION   1250   // X, Y, Z and E max acceleration in mm/s^2 for travels (M204T)
 
 #define MANUAL_FEEDRATE {2700, 2700, 1000, 100}   // set the speeds for manual moves (mm/min)
 
@@ -550,6 +553,7 @@
 //Kuo ===
 
 #define TMC2130_STEALTH_Z
+#define TMC2130_DEDGE_STEPPING
 
 //#define TMC2130_SERVICE_CODES_M910_M918
 
@@ -621,6 +625,8 @@
 #define EXTRUDER_2_AUTO_FAN_PIN   -1
 #define EXTRUDER_AUTO_FAN_TEMPERATURE 50
 #define EXTRUDER_AUTO_FAN_SPEED   255  // == full speed
+#define EXTRUDER_ALTFAN_DETECT
+#define EXTRUDER_ALTFAN_SPEED_SILENT 255
 
 
 
@@ -828,6 +834,9 @@
 
 #define PLA_PREHEAT_HOTEND_TEMP 215
 #define PLA_PREHEAT_HPB_TEMP 60
+
+#define PVB_PREHEAT_HOTEND_TEMP 215
+#define PVB_PREHEAT_HPB_TEMP 75
 
 #define ASA_PREHEAT_HOTEND_TEMP 260
 #define ASA_PREHEAT_HPB_TEMP 105
