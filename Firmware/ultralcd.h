@@ -1,13 +1,7 @@
 #ifndef ULTRALCD_H
 #define ULTRALCD_H
 
-#include "Marlin.h"
-#include "lcd.h"
-#include "conv2str.h"
-#include "menu.h"
 #include "mesh_bed_calibration.h"
-#include "config.h"
-
 #include "config.h"
 
 extern void menu_lcd_longpress_func(void);
@@ -48,7 +42,6 @@ void lcd_pause_usb_print();
 void lcd_resume_print();
 void lcd_print_stop();
 void prusa_statistics(int _message, uint8_t _col_nr = 0);
-unsigned char lcd_choose_color();
 void lcd_load_filament_color_check();
 //void lcd_mylang();
 
@@ -200,17 +193,10 @@ void mFilamentItemForce();
 void lcd_generic_preheat_menu();
 void unload_filament(bool automatic = false);
 
-void stack_error();
 void lcd_printer_connected();
 void lcd_ping();
 
 void lcd_calibrate_extruder();
-void lcd_farm_sdcard_menu();
-
-//void getFileDescription(char *name, char *description);
-
-void lcd_farm_sdcard_menu_w();
-//void get_description();
 
 void lcd_wait_for_heater();
 void lcd_wait_for_cool_down();

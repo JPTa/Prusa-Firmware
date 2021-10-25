@@ -11,6 +11,7 @@
 #include "cardreader.h"
 #include "cmdqueue.h"
 #include "ultralcd.h"
+#include "menu.h"
 #include "sound.h"
 #include "printers.h"
 #include <avr/pgmspace.h>
@@ -1585,7 +1586,7 @@ void mmu_continue_loading(bool blocking)
         {
         case Ls::Enter:
             increment_load_fail();
-            // no break
+            // FALLTHRU
         case Ls::Retry:
             ++retry; // overflow not handled, as it is not dangerous.
             if (retry >= max_retry)
