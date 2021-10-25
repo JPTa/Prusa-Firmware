@@ -99,6 +99,9 @@
 //====== Kuo E3D Volcano Support
 //#define E3D_VOLCANO //uncomment to adjust Z_MAX_POS to accomodate 8.5 mm greater Volcano extruder height
 
+//======= JTa E3D V7 support
+//#define E3D_V7
+
 //====== Kuo Slice Support
 //#define SLICETHERMISTOR //uncomment for Slice Thermistor
 //#define SLICEMAGNUM //uncomment to adjust MMU2S filament laod/unload distances for Slice Magnum
@@ -172,6 +175,8 @@
 #ifdef SKELESTRUDER //kuo Skelestruder height
   #if defined(E3D_VOLCANO)
     #define Z_MAX_POS 205
+  #elif defined(E3D_V7)
+    #define Z_MAX_POS 215
   #else
     #define Z_MAX_POS 220
   #endif

@@ -2,6 +2,7 @@
 #define CONFIGURATION_PRUSA_H
 
 #include <limits.h>
+
 #include "printers.h"
 /*------------------------------------
  GENERAL SETTINGS
@@ -99,6 +100,9 @@
 //====== Kuo E3D Volcano Support
 #define E3D_VOLCANO //uncomment to adjust Z_MAX_POS to accomodate 8.5 mm greater Volcano extruder height
 
+//======= JTa E3D V7 support
+//#define E3D_V7
+
 //====== Kuo Slice Support
 //#define SLICETHERMISTOR //uncomment for Slice Thermistor
 //#define SLICEMAGNUM //uncomment to adjust MMU2S filament laod/unload distances for Slice Magnum
@@ -171,7 +175,9 @@
 #define Y_MIN_POS -4 //orig -4
 #ifdef SKELESTRUDER //kuo Skelestruder height
   #if defined(E3D_VOLCANO)
-    #define Z_MAX_POS 207 // JTa: minus 3mm due to bed mod!
+    #define Z_MAX_POS 205
+  #elif defined(E3D_V7)
+    #define Z_MAX_POS 215
   #else
     #define Z_MAX_POS 220
   #endif
@@ -294,7 +300,7 @@
 
 //#define DEBUG_BUILD
 //#define DEBUG_SEC_LANG   //secondary language debug output at startup
-//#define DEBUG_W25X20CL   //debug external spi flash
+//#define DEBUG_XFLASH   //debug external spi flash
 #ifdef DEBUG_BUILD
 //#define _NO_ASM
 #define DEBUG_DCODES //D codes
@@ -500,6 +506,7 @@
 #define TMC2130_PWM_CLK   (2 * TMC2130_FCLK / TMC2130_PWM_DIV) // PWM frequency (23.4kHz, 35.1kHz, 46.9kHz, 58.5kHz for 12MHz fclk)
 
 #define TMC2130_TPWMTHRS  0         // TPWMTHRS - Sets the switching speed threshold based on TSTEP from stealthChop to spreadCycle mode
+#define TMC2130_TPWMTHRS_E 403      // Switch extruder from StealthChop to SpreadCycle at around 900mm/min
 #define TMC2130_THIGH     0         // THIGH - unused
 
 //#define TMC2130_TCOOLTHRS_X 450       // TCOOLTHRS - coolstep treshold
@@ -541,6 +548,7 @@
 //new settings is possible for vsense = 1, running current value > 31 set vsense to zero and shift both currents by 1 bit right (Z axis only)
 #define TMC2130_CURRENTS_H {16, 20, 35, 14}  // default holding currents for all axes
 #define TMC2130_CURRENTS_R {16, 20, 35, 14}  // default running currents for all axes
+#define TMC2130_CURRENTS_FARM 36             // E 805 mA peak for ECool/farm mode
 
 //Kuo running currents for homing
 #ifndef X_AXIS_MOTOR_09 //Kuo
