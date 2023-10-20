@@ -1,6 +1,6 @@
 //xyzcal.cpp - xyz calibration with image processing
 
-#include "Configuration_prusa.h"
+#include "Configuration_var.h"
 #ifdef NEW_XYZCAL
 
 #include "xyzcal.h"
@@ -135,41 +135,43 @@ pos_mm_t pos_2_mm(float pos){
 	return pos * 0.01f;
 }
 
-void xyzcal_meassure_enter(void)
+void xyzcal_measure_enter(void)
 {
-	DBG(_n("xyzcal_meassure_enter\n"));
+	DBG(_n("xyzcal_measure_enter\n"));
+	lcd_puts_at_P(4,3,PSTR("Measure center  ")); ////MSG_MEASURE_CENTER c=16
+	// disable heaters and stop motion before we initialize sm4
 	disable_heater();
-	DISABLE_TEMPERATURE_INTERRUPT();
-#if (defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
-	DISABLE_FANCHECK_INTERRUPT();
-#endif //(defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
+	st_synchronize();
+
+	// disable incompatible interrupts
 	DISABLE_STEPPER_DRIVER_INTERRUPT();
 #ifdef WATCHDOG
 	wdt_disable();
 #endif //WATCHDOG
+
+	// setup internal callbacks
 	sm4_stop_cb = 0;
 	sm4_update_pos_cb = xyzcal_update_pos;
 	sm4_calc_delay_cb = xyzcal_calc_delay;
 }
 
-void xyzcal_meassure_leave(void)
+void xyzcal_measure_leave(void)
 {
-	DBG(_n("xyzcal_meassure_leave\n"));
-    planner_abort_hard();
-	ENABLE_TEMPERATURE_INTERRUPT();
-#if (defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
-	ENABLE_FANCHECK_INTERRUPT();
-#endif //(defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
-	ENABLE_STEPPER_DRIVER_INTERRUPT();
+	DBG(_n("xyzcal_measure_leave\n"));
+	lcd_set_cursor(4,3);
+	lcd_space(16);
+
+	// resync planner position from counters (changed by xyzcal_update_pos)
+	planner_reset_position();
+
+	// re-enable interrupts
 #ifdef WATCHDOG
 	wdt_enable(WDTO_4S);
 #ifdef EMERGENCY_HANDLERS
 	WDTCSR |= (1 << WDIE);
 #endif //EMERGENCY_HANDLERS
 #endif //WATCHDOG
-	sm4_stop_cb = 0;
-	sm4_update_pos_cb = 0;
-	sm4_calc_delay_cb = 0;
+	ENABLE_STEPPER_DRIVER_INTERRUPT();
 }
 
 
@@ -342,10 +344,10 @@ bool xyzcal_spiral8(int16_t cx, int16_t cy, int16_t z0, int16_t dz, int16_t radi
 	return ret;
 }
 
-#ifdef XYZCAL_MEASSURE_PINDA_HYSTEREZIS
-int8_t xyzcal_meassure_pinda_hysterezis(int16_t min_z, int16_t max_z, uint16_t delay_us, uint8_t samples)
+#ifdef XYZCAL_MEASURE_PINDA_HYSTERESIS
+int8_t xyzcal_measure_pinda_hysteresis(int16_t min_z, int16_t max_z, uint16_t delay_us, uint8_t samples)
 {
-	DBG(_n("xyzcal_meassure_pinda_hysterezis\n"));
+	DBG(_n("xyzcal_measure_pinda_hysteresis\n"));
 	int8_t ret = -1; // PINDA signal error
 	int16_t z = _Z;
 	int16_t sum_up = 0;
@@ -382,7 +384,7 @@ int8_t xyzcal_meassure_pinda_hysterezis(int16_t min_z, int16_t max_z, uint16_t d
 			if (abs(up - dn) > XYZCAL_PINDA_HYST_DIF)
 				ret = -2; // difference between up-dn to high
 			else if ((hyst < XYZCAL_PINDA_HYST_MIN) || (hyst > XYZCAL_PINDA_HYST_MAX))
-				ret = -3; // hysterezis out of range
+				ret = -3; // hysteresis out of range
 			else
 				ret = hyst;
 		}
@@ -390,7 +392,7 @@ int8_t xyzcal_meassure_pinda_hysterezis(int16_t min_z, int16_t max_z, uint16_t d
 	xyzcal_lineXYZ_to(_X, _Y, z, delay_us, 0);
 	return ret;
 }
-#endif //XYZCAL_MEASSURE_PINDA_HYSTEREZIS
+#endif //XYZCAL_MEASURE_PINDA_HYSTERESIS
 
 void print_hysteresis(int16_t min_z, int16_t max_z, int16_t step){
 	int16_t delay_us = 600;
@@ -413,22 +415,20 @@ void print_hysteresis(int16_t min_z, int16_t max_z, int16_t step){
 	}
 }
 
-void update_position_1_step(uint8_t axis, uint8_t dir){
-	if (axis & X_AXIS_MASK)
-		_X_ += dir & X_AXIS_MASK ? -1 : 1;
-	if (axis & Y_AXIS_MASK)
-		_Y_ += dir & Y_AXIS_MASK ? -1 : 1;
-	if (axis & Z_AXIS_MASK)
-		_Z_ += dir & Z_AXIS_MASK ? -1 : 1;
+static void update_position_1_step(const uint8_t axis, const uint8_t dir) {
+	for (uint8_t i = X_AXIS, mask = X_AXIS_MASK; i <= Z_AXIS; i++, mask <<= 1) {
+		if (axis & mask) {
+			count_position[i] += dir & mask ? -1L : 1L;
+		}
+	}
 }
 
-void set_axes_dir(uint8_t axes, uint8_t dir){
-	if (axes & X_AXIS_MASK)
-		sm4_set_dir(X_AXIS, dir & X_AXIS_MASK);
-	if (axes & Y_AXIS_MASK)
-		sm4_set_dir(Y_AXIS, dir & Y_AXIS_MASK);
-	if (axes & Z_AXIS_MASK)
-		sm4_set_dir(Z_AXIS, dir & Z_AXIS_MASK);
+static void __attribute__((noinline)) set_axes_dir(const uint8_t axis, const uint8_t dir) {
+	for (uint8_t i = X_AXIS, mask = X_AXIS_MASK; i <= Z_AXIS; i++, mask <<= 1) {
+		if (axis & mask) {
+			sm4_set_dir(i, dir & mask);
+		}
+	}
 }
 
 /// Accelerate up to max.speed (defined by @min_delay_us)
@@ -535,7 +535,7 @@ void go_start_stop(uint8_t axes, uint8_t dir, int16_t acc, uint16_t min_delay_us
 /// moves X, Y, Z one after each other
 /// starts and ends at 0 speed
 void go_manhattan(int16_t x, int16_t y, int16_t z, int16_t acc, uint16_t min_delay_us){
-	int32_t length;
+	int16_t length;
 
 	// DBG(_n("x %d -> %d, "), x, _X);
 	length = x - _X;
@@ -551,7 +551,7 @@ void go_manhattan(int16_t x, int16_t y, int16_t z, int16_t acc, uint16_t min_del
 	// DBG(_n("\n"));
 }
 
-void xyzcal_scan_pixels_32x32_Zhop(int16_t cx, int16_t cy, int16_t min_z, int16_t max_z, uint16_t delay_us, uint8_t *pixels){
+void __attribute__((noinline)) xyzcal_scan_pixels_32x32_Zhop(int16_t cx, int16_t cy, int16_t min_z, int16_t max_z, uint16_t delay_us, uint8_t *pixels){
 	if (!pixels)
 		return;
 	int16_t z_trig;
@@ -569,6 +569,8 @@ void xyzcal_scan_pixels_32x32_Zhop(int16_t cx, int16_t cy, int16_t min_z, int16_
 			sm4_set_dir(X_AXIS, d);
             //@size=242
 			DBG(_n("%d\n"), 64 - (r * 2 + d)); ///< to keep OctoPrint connection alive
+			lcd_set_cursor(4,3);
+			lcd_printf_P(PSTR("Countdown: %d "),64 - (r * 2 + d)); ////MSG_COUNTDOWN c=12
 
 			for (uint8_t c = 0; c < 32; c++){ ///< X axis
 				/// move to the next point and move Z up diagonally (if needed)
@@ -999,17 +1001,13 @@ BedSkewOffsetDetectionResultType xyzcal_scan_and_process(){
 	return ret;
 }
 
-BedSkewOffsetDetectionResultType xyzcal_find_bed_induction_sensor_point_xy(void){
-	BedSkewOffsetDetectionResultType ret = BED_SKEW_OFFSET_DETECTION_POINT_NOT_FOUND;
-
-    //@size=258
+BedSkewOffsetDetectionResultType xyzcal_find_bed_induction_sensor_point_xy(void) {
     // DBG(_n("xyzcal_find_bed_induction_sensor_point_xy x=%ld y=%ld z=%ld\n"), count_position[X_AXIS], count_position[Y_AXIS], count_position[Z_AXIS]);
-	st_synchronize();
-
-	xyzcal_meassure_enter();
+	BedSkewOffsetDetectionResultType ret = BED_SKEW_OFFSET_DETECTION_POINT_NOT_FOUND;
+	xyzcal_measure_enter();
 	if (xyzcal_searchZ())
 		ret = xyzcal_scan_and_process();
-	xyzcal_meassure_leave();
+	xyzcal_measure_leave();
 	return ret;
 }
 

@@ -7,17 +7,6 @@
 #include "system_timer.h"
 
 /**
- * @brief construct Timer
- *
- * It is guaranteed, that construction is equivalent with zeroing all members.
- * This property can be exploited in menu_data.
- */
-template<typename T>
-Timer<T>::Timer() : m_isRunning(false), m_started()
-{
-}
-
-/**
  * @brief Start timer
  */
 template<typename T>
@@ -62,6 +51,25 @@ bool Timer<T>::expired(T msPeriod)
     }
     if (expired) m_isRunning = false;
     return expired;
+}
+
+/**
+ * @brief Ticks since the timer was started
+ *
+ * This function returns 0 if the timer is not started. Otherwise, it returns
+ * the time in milliseconds since the timer was started.
+ * This function is expected to handle wrap around of time register well.
+ * The maximum elapsed time is dictated by the template type
+ */
+template<typename T>
+T Timer<T>::elapsed() {
+  return m_isRunning ? (_millis() - m_started) : 0;
+}
+
+template<typename T>
+bool Timer<T>::expired_cont(T msPeriod)
+{
+    return !m_isRunning || expired(msPeriod);
 }
 
 template class Timer<unsigned long>;
