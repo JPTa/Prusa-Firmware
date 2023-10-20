@@ -17,11 +17,16 @@ template <class T>
 class Timer
 {
 public:
-    Timer();
+    inline constexpr Timer()
+    : m_isRunning(false)
+    , m_started(0) {};
+
     void start();
     void stop(){m_isRunning = false;}
     bool running()const {return m_isRunning;}
-    bool expired(T msPeriod);
+    bool expired(T msPeriod); // returns true only once after expiration, then stops running
+    T elapsed(); // returns the time in milliseconds since the timer was started or 0 otherwise
+    bool expired_cont(T msPeriod); // return true when continuosly when expired / not running
 protected:
     T started()const {return m_started;}
 private:

@@ -4,17 +4,17 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <avr/pgmspace.h>
+#include <util/atomic.h>
 #include <util/delay.h>
 #include "Timer.h"
 
 #include "Configuration.h"
 #include "pins.h"
-#include <binary.h>
 #include <Arduino.h>
 #include "Marlin.h"
 #include "fastio.h"
-//-//
 #include "sound.h"
+#include "backlight.h"
 
 #define LCD_DEFAULT_DELAY 100
 
@@ -66,17 +66,33 @@
 #define LCD_RS_FLAG 0x01
 #define LCD_HALF_FLAG 0x02
 
+constexpr uint8_t row_offsets[] PROGMEM = { 0x00, 0x40, 0x14, 0x54 };
+
 FILE _lcdout; // = {0}; Global variable is always zero initialized, no need to explicitly state that.
 
-uint8_t lcd_displayfunction = 0;
-uint8_t lcd_displaycontrol = 0;
-uint8_t lcd_displaymode = 0;
+static uint8_t lcd_displayfunction = 0;
+static uint8_t lcd_displaycontrol = 0;
+static uint8_t lcd_displaymode = 0;
 
 uint8_t lcd_currline;
+static uint8_t lcd_ddram_address; // no need for preventing ddram overflow
 
 #ifdef VT100
 uint8_t lcd_escape[8];
 #endif
+
+struct CustomCharacter {
+    uint8_t colByte;
+    uint8_t rowData[4];
+    char alternate;
+};
+
+static uint8_t lcd_custom_characters[8] = {0};
+static const CustomCharacter Font[] PROGMEM = {
+#include "FontTable.h"
+};
+
+#define CUSTOM_CHARACTERS_CNT (sizeof(Font) / sizeof(Font[0]))
 
 static void lcd_display(void);
 
@@ -93,6 +109,9 @@ static void lcd_rightToLeft(void);
 static void lcd_autoscroll(void);
 static void lcd_no_autoscroll(void);
 #endif
+
+static void lcd_print_custom(uint8_t c);
+static void lcd_invalidate_custom_characters();
 
 #ifdef VT100
 void lcd_escape_write(uint8_t chr);
@@ -127,40 +146,45 @@ static void lcd_send(uint8_t data, uint8_t flags, uint16_t duration = LCD_DEFAUL
 	_delay_us(5);
 	lcd_writebits(data);
 #ifndef LCD_8BIT
-	if (!(flags & LCD_HALF_FLAG))
-	{
-		_delay_us(LCD_DEFAULT_DELAY);
-		lcd_writebits(data<<4);
+	if (!(flags & LCD_HALF_FLAG)) {
+		// _delay_us(LCD_DEFAULT_DELAY); // should not be needed when sending a two nibble instruction.
+		lcd_writebits((data << 4) | (data >> 4)); //force efficient swap opcode even though the lower nibble is ignored in this case
 	}
 #endif
 	delayMicroseconds(duration);
 }
 
-static void lcd_command(uint8_t value, uint16_t delayExtra = 0)
+static void lcd_command(uint8_t value, uint16_t duration = LCD_DEFAULT_DELAY)
 {
-	lcd_send(value, LOW, LCD_DEFAULT_DELAY + delayExtra);
+	lcd_send(value, LOW, duration);
 }
 
 static void lcd_write(uint8_t value)
 {
-	if (value == '\n')
-	{
+	if (value == '\n') {
 		if (lcd_currline > 3) lcd_currline = -1;
 		lcd_set_cursor(0, lcd_currline + 1); // LF
-		return;
+	}
+	else if ((value >= 0x80) && (value < (0x80 + CUSTOM_CHARACTERS_CNT))) {
+		lcd_print_custom(value);
 	}
 	#ifdef VT100
-	if (lcd_escape[0] || (value == 0x1b)){
+	else if (lcd_escape[0] || (value == '\e')) {
 		lcd_escape_write(value);
-		return;
 	}
 	#endif
-	lcd_send(value, HIGH);
+	else {
+		lcd_send(value, HIGH);
+		lcd_ddram_address++; // no need for preventing ddram overflow
+	}
 }
 
 static void lcd_begin(uint8_t clear)
 {
 	lcd_currline = 0;
+	lcd_ddram_address = 0;
+
+	lcd_invalidate_custom_characters();
 
 	lcd_send(LCD_FUNCTIONSET | LCD_8BITMODE, LOW | LCD_HALF_FLAG, 4500); // wait min 4.1ms
 	// second try
@@ -224,25 +248,27 @@ void lcd_init(void)
 void lcd_refresh(void)
 {
     lcd_begin(1);
-    lcd_set_custom_characters();
 }
 
 void lcd_refresh_noclear(void)
 {
     lcd_begin(0);
-    lcd_set_custom_characters();
 }
 
+// Clear display, set cursor position to zero and unshift the display. It also invalidates all custom characters
 void lcd_clear(void)
 {
-	lcd_command(LCD_CLEARDISPLAY, 1600);  // clear display, set cursor position to zero
+	lcd_command(LCD_CLEARDISPLAY, 1600);
 	lcd_currline = 0;
+	lcd_ddram_address = 0;
+	lcd_invalidate_custom_characters();
 }
 
+// Set cursor position to zero and in DDRAM. It does not unshift the display.
 void lcd_home(void)
 {
-	lcd_command(LCD_RETURNHOME, 1600);  // set cursor position to zero
-	lcd_currline = 0;
+	lcd_set_cursor(0, 0);
+	lcd_ddram_address = 0;
 }
 
 // Turn the display on/off (quickly)
@@ -329,23 +355,92 @@ void lcd_no_autoscroll(void)
 }
 #endif
 
+/// @brief set the current LCD row
+/// @param row LCD row number, ranges from 0 to LCD_HEIGHT - 1
+static void FORCE_INLINE lcd_set_current_row(uint8_t row)
+{
+	lcd_currline = min(row, LCD_HEIGHT - 1);
+}
+
+/// @brief Calculate the LCD row offset
+/// @param row LCD row number, ranges from 0 to LCD_HEIGHT - 1
+/// @return row offset which the LCD register understands
+static uint8_t __attribute__((noinline)) lcd_get_row_offset(uint8_t row)
+{
+	return pgm_read_byte(row_offsets + min(row, LCD_HEIGHT - 1));
+}
+
 void lcd_set_cursor(uint8_t col, uint8_t row)
 {
-	int row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
-	if (row >= LCD_HEIGHT)
-		row = LCD_HEIGHT - 1;    // we count rows starting w/0
-	lcd_currline = row;  
-	lcd_command(LCD_SETDDRAMADDR | (col + row_offsets[row]));
+	lcd_set_current_row(row);
+    uint8_t addr = col + lcd_get_row_offset(lcd_currline);
+	lcd_ddram_address = addr;
+	lcd_command(LCD_SETDDRAMADDR | addr);
+}
+
+void lcd_set_cursor_column(uint8_t col)
+{
+	uint8_t addr = col + lcd_get_row_offset(lcd_currline);
+	lcd_ddram_address = addr;
+	lcd_command(LCD_SETDDRAMADDR | addr);
 }
 
 // Allows us to fill the first 8 CGRAM locations
 // with custom characters
-void lcd_createChar_P(uint8_t location, const uint8_t* charmap)
+void lcd_createChar_P(uint8_t location, const CustomCharacter *char_p)
 {
-  location &= 0x7; // we only have 8 locations 0-7
-  lcd_command(LCD_SETCGRAMADDR | (location << 3));
-  for (int i=0; i<8; i++)
-    lcd_send(pgm_read_byte(&charmap[i]), HIGH);
+	uint8_t charmap[8]; // unpacked font data
+
+	// The LCD expects the CGRAM data to be sent as pixel data, row by row. Since there are 8 rows per character, 8 bytes need to be sent.
+	// However, storing the data in the flash as the LCD expects it is wasteful since 3 bits per row are don't care and are not used.
+	// Therefore, flash can be saved if the character data is packed. For the AVR to unpack efficiently and quickly, the following scheme was used:
+	// 
+	// colbyte data0 data1 data2 data3
+	//    a      b     c     d     e
+	// 
+	// ** ** ** b7 b6 b5 b4 a0
+	// ** ** ** b3 b2 b1 b0 a1
+	// ** ** ** c7 c6 c5 c4 a2
+	// ** ** ** c3 c2 c1 c0 a3
+	// ** ** ** d7 d6 d5 d4 a4
+	// ** ** ** d3 d2 d1 d0 a5
+	// ** ** ** e7 e6 e5 e4 a6
+	// ** ** ** e3 e2 e1 e0 a7
+	// 
+	// The bits marked as ** in the unpacked data are don't care and they will contain garbage.
+
+	uint8_t temp;
+	uint8_t colByte;
+	__asm__ __volatile__ (
+		// load colByte
+		"lpm %1, Z+" "\n\t"
+		
+		// begin for loop
+		"ldi %0, 8" "\n\t"
+		"mov __zero_reg__, %0" "\n\t"		// use zero_reg as loop counter
+		"forBegin_%=: " "\n\t"
+			"sbrs __zero_reg__, 0" "\n\t"	// test LSB of counter. Fetch new data if counter is even
+			"lpm __tmp_reg__, Z+" "\n\t"	// load next data byte from progmem, increment
+			"swap __tmp_reg__" "\n\t"		// swap the nibbles
+			"mov %0, __tmp_reg__" "\n\t"	// copy row data to temp
+
+			// "andi %0, 0xF" "\n\t"			// mask lower nibble - Not needed since bits 7-5 of the CGRAM are don't care, so they can contain garbage
+			"ror %1" "\n\t" 				// consume LSB of colByte and push it to the carry
+			"rol %0" "\n\t"					// insert the column LSB from carry
+			"st %a3+, %0" "\n\t"			// push the generated row data to the output
+		// end for loop
+		"dec __zero_reg__" "\n\t"
+		"brne forBegin_%=" "\n\t"
+		
+		: "=&d" (temp), "=&r" (colByte)
+		: "z" (char_p), "e" (charmap)
+	);
+
+	lcd_command(LCD_SETCGRAMADDR | (location << 3));
+	for (uint8_t i = 0; i < 8; i++) {
+		lcd_send(charmap[i], HIGH);
+	}
+	lcd_command(LCD_SETDDRAMADDR | lcd_ddram_address); // no need for masking the address
 }
 
 #ifdef VT100
@@ -408,7 +503,7 @@ void lcd_escape_write(uint8_t chr)
 			break;
 		case '2':
 			if (chr == 'J') // escape = "\x1b[2J"
-				{ lcd_clear(); lcd_currline = 0; break; } // EraseScreen
+				{ lcd_clear(); break; } // EraseScreen
 		default:
 			if (e_2_is_num && // escape = "\x1b[%1d"
 				((chr == ';') || // escape = "\x1b[%1d;"
@@ -528,6 +623,26 @@ void lcd_print(const char* s)
 	while (*s) lcd_write(*(s++));
 }
 
+uint8_t lcd_print_pad(const char* s, uint8_t len)
+{
+    while (len && *s) {
+        lcd_write(*(s++));
+        --len;
+    }
+    lcd_space(len);
+    return len;
+}
+
+uint8_t lcd_print_pad_P(const char* s, uint8_t len)
+{
+    while (len && pgm_read_byte(s)) {
+        lcd_write(pgm_read_byte(s++));
+        --len;
+    }
+    lcd_space(len);
+    return len;
+}
+
 void lcd_print(char c, int base)
 {
 	lcd_print((long) c, base);
@@ -573,16 +688,10 @@ void lcd_print(unsigned long n, int base)
 		lcd_printNumber(n, base);
 }
 
-void lcd_print(double n, int digits)
-{
-  lcd_printFloat(n, digits);
-}
-
-
 void lcd_printNumber(unsigned long n, uint8_t base)
 {
 	unsigned char buf[8 * sizeof(long)]; // Assumes 8-bit chars. 
-	unsigned long i = 0;
+	uint8_t i = 0;
 	if (n == 0)
 	{
 		lcd_print('0');
@@ -597,54 +706,19 @@ void lcd_printNumber(unsigned long n, uint8_t base)
 		lcd_print((char) (buf[i - 1] < 10 ?	'0' + buf[i - 1] : 'A' + buf[i - 1] - 10));
 }
 
-void lcd_printFloat(double number, uint8_t digits) 
-{ 
-	// Handle negative numbers
-	if (number < 0.0)
-	{
-		lcd_print('-');
-		number = -number;
-	}
-	// Round correctly so that print(1.999, 2) prints as "2.00"
-	double rounding = 0.5;
-	for (uint8_t i=0; i<digits; ++i)
-		rounding /= 10.0;
-	number += rounding;
-	// Extract the integer part of the number and print it
-	unsigned long int_part = (unsigned long)number;
-	double remainder = number - (double)int_part;
-	lcd_print(int_part);
-	// Print the decimal point, but only if there are digits beyond
-	if (digits > 0)
-		lcd_print('.'); 
-	// Extract digits from the remainder one at a time
-	while (digits-- > 0)
-	{
-		remainder *= 10.0;
-		int toPrint = int(remainder);
-		lcd_print(toPrint);
-		remainder -= toPrint; 
-	} 
-}
-
-
 uint8_t lcd_draw_update = 2;
-int32_t lcd_encoder = 0;
-uint8_t lcd_encoder_bits = 0;
-int8_t lcd_encoder_diff = 0;
+int16_t lcd_encoder = 0;
+static int8_t lcd_encoder_diff = 0;
 
-uint8_t lcd_buttons = 0;
-uint8_t lcd_button_pressed = 0;
+uint8_t lcd_click_trigger = 0;
 uint8_t lcd_update_enabled = 1;
+static bool lcd_backlight_wake_trigger; // Flag set by interrupt when the knob is pressed or rotated
 
 uint32_t lcd_next_update_millis = 0;
-uint8_t lcd_status_update_delay = 0;
 
 
 
 lcd_longpress_func_t lcd_longpress_func = 0;
-
-lcd_charsetup_func_t lcd_charsetup_func = 0;
 
 lcd_lcdupdate_func_t lcd_lcdupdate_func = 0;
 
@@ -672,38 +746,56 @@ uint8_t lcd_clicked(void)
     return clicked;
 }
 
-void lcd_beeper_quick_feedback(void)
-{
-//-//
-Sound_MakeSound(e_SOUND_TYPE_ButtonEcho);
-/*
-	for(int8_t i = 0; i < 10; i++)
-	{
-		Sound_MakeCustom(100,0,false);
-		_delay_us(100);
-	}
-*/
+void lcd_beeper_quick_feedback(void) {
+	Sound_MakeSound(e_SOUND_TYPE_ButtonEcho);
 }
 
 void lcd_quick_feedback(void)
 {
   lcd_draw_update = 2;
-  lcd_button_pressed = false;
   lcd_beeper_quick_feedback();
+}
+
+void lcd_knob_update() {
+	if (lcd_backlight_wake_trigger) {
+		lcd_backlight_wake_trigger = false;
+		backlight_wake();
+		bool did_rotate = false;
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+			if (abs(lcd_encoder_diff) >= ENCODER_PULSES_PER_STEP) {
+				lcd_encoder += lcd_encoder_diff / ENCODER_PULSES_PER_STEP;
+				lcd_encoder_diff %= ENCODER_PULSES_PER_STEP;
+				did_rotate = true;
+			}
+			else {
+				// Get lcd_encoder_diff in sync with the encoder hard steps.
+				// We assume that a click happens only when the knob is rotated into a stable position
+				lcd_encoder_diff = 0;
+			}
+		}
+		Sound_MakeSound(did_rotate ? e_SOUND_TYPE_EncoderMove : e_SOUND_TYPE_ButtonEcho);
+
+		if (lcd_draw_update == 0) {
+			// Update LCD rendering at minimum
+			lcd_draw_update = 1;
+		}
+	}
 }
 
 void lcd_update(uint8_t lcdDrawUpdateOverride)
 {
 	if (lcd_draw_update < lcdDrawUpdateOverride)
 		lcd_draw_update = lcdDrawUpdateOverride;
-	if (!lcd_update_enabled)
-		return;
+
+	if (!lcd_update_enabled) return;
+
 	if (lcd_lcdupdate_func)
 		lcd_lcdupdate_func();
 }
 
 void lcd_update_enable(uint8_t enabled)
 {
+	// printf_P(PSTR("lcd_update_enable(%u -> %u)\n"), lcd_update_enabled, enabled);
 	if (lcd_update_enabled != enabled)
 	{
 		lcd_update_enabled = enabled;
@@ -718,8 +810,6 @@ void lcd_update_enable(uint8_t enabled)
 			lcd_next_update_millis = _millis() - 1;
 			// Full update.
 			lcd_clear();
-			if (lcd_charsetup_func)
-				lcd_charsetup_func();
 			lcd_update(2);
 		} else
 		{
@@ -735,14 +825,10 @@ bool lcd_longpress_trigger = 0;
 void lcd_buttons_update(void)
 {
     static uint8_t lcd_long_press_active = 0;
-	uint8_t newbutton = 0;
-	if (READ(BTN_EN1) == 0)  newbutton |= EN_A;
-	if (READ(BTN_EN2) == 0)  newbutton |= EN_B;
-
+    static uint8_t lcd_button_pressed = 0;
     if (READ(BTN_ENC) == 0)
     { //button is pressed
-        lcd_timeoutToStatus.start();
-        if (!buttonBlanking.running() || buttonBlanking.expired(BUTTON_BLANKING_TIME)) {
+        if (buttonBlanking.expired_cont(BUTTON_BLANKING_TIME)) {
             buttonBlanking.start();
             safetyTimer.start();
             if ((lcd_button_pressed == 0) && (lcd_long_press_active == 0))
@@ -761,237 +847,123 @@ void lcd_buttons_update(void)
     { //button not pressed
         if (lcd_button_pressed)
         { //button was released
-            buttonBlanking.start();
-            if (lcd_long_press_active == 0)
+            lcd_button_pressed = 0; // Reset to prevent double triggering
+            if (!lcd_long_press_active)
             { //button released before long press gets activated
-                newbutton |= EN_C;
+                lcd_click_trigger = 1; // This flag is reset when the event is consumed
             }
-            //else if (menu_menu == lcd_move_z) lcd_quick_feedback();
-            //lcd_button_pressed is set back to false via lcd_quick_feedback function
+            lcd_backlight_wake_trigger = true; // flag event, knob pressed
+            lcd_long_press_active = 0;
         }
-        lcd_long_press_active = 0;
     }
 
-	lcd_buttons = newbutton;
-	//manage encoder rotation
-	uint8_t enc = 0;
-	if (lcd_buttons & EN_A) enc |= B01;
-	if (lcd_buttons & EN_B) enc |= B10;
-	if (enc != lcd_encoder_bits)
-	{
-		switch (enc)
-		{
-		case encrot0:
-			if (lcd_encoder_bits == encrot3)
-				lcd_encoder_diff++;
-			else if (lcd_encoder_bits == encrot1)
-				lcd_encoder_diff--;
-			break;
-		case encrot1:
-			if (lcd_encoder_bits == encrot0)
-				lcd_encoder_diff++;
-			else if (lcd_encoder_bits == encrot2)
-				lcd_encoder_diff--;
-			break;
-		case encrot2:
-			if (lcd_encoder_bits == encrot1)
-				lcd_encoder_diff++;
-			else if (lcd_encoder_bits == encrot3)
-				lcd_encoder_diff--;
-			break;
-		case encrot3:
-			if (lcd_encoder_bits == encrot2)
-				lcd_encoder_diff++;
-			else if (lcd_encoder_bits == encrot0)
-				lcd_encoder_diff--;
-			break;
-		}
-	}
-	lcd_encoder_bits = enc;
+    //manage encoder rotation
+	static const int8_t encrot_table[] PROGMEM = {
+		0, -1, 1, 2,
+		1, 0, 2, -1,
+		-1, -2, 0, 1,
+		-2, 1, -1, 0,
+	};
+
+	static uint8_t enc_bits_old = 0;
+	uint8_t enc_bits = 0;
+    if (!READ(BTN_EN1)) enc_bits |= _BV(0);
+    if (!READ(BTN_EN2)) enc_bits |= _BV(1);
+    
+	if (enc_bits != enc_bits_old)
+    {
+		int8_t newDiff = pgm_read_byte(&encrot_table[(enc_bits_old << 2) | enc_bits]);
+		lcd_encoder_diff += newDiff;
+
+        if (abs(lcd_encoder_diff) >= ENCODER_PULSES_PER_STEP) {
+            lcd_backlight_wake_trigger = true; // flag event, knob rotated
+        }
+        enc_bits_old = enc_bits;
+    }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Custom character data
 
-const uint8_t lcd_chardata_bedTemp[8] PROGMEM = {
-	B00000,
-	B11111,
-	B10101,
-	B10001,
-	B10101,
-	B11111,
-	B00000,
-	B00000}; //thanks Sonny Mounicou
+// #define DEBUG_CUSTOM_CHARACTERS
 
-const uint8_t lcd_chardata_degree[8] PROGMEM = {
-	B01100,
-	B10010,
-	B10010,
-	B01100,
-	B00000,
-	B00000,
-	B00000,
-	B00000};
+static void lcd_print_custom(uint8_t c) {
+	uint8_t charToSend = pgm_read_byte(&Font[c - 0x80].alternate); // in case no empty slot is found, use the alternate character.
+	int8_t slotToUse = -1;
 
-const uint8_t lcd_chardata_thermometer[8] PROGMEM = {
-	B00100,
-	B01010,
-	B01010,
-	B01010,
-	B01010,
-	B10001,
-	B10001,
-	B01110};
+	for (uint8_t i = 0; i < 8; i++) {
+		// first check if we already have the character in the lcd memory
+		if ((lcd_custom_characters[i] & 0x7F) == (c & 0x7F)) {
+			lcd_custom_characters[i] = c; // mark the custom character as used
+			charToSend = i; // send the found custom character id
+#ifdef DEBUG_CUSTOM_CHARACTERS
+			printf_P(PSTR("found char %02x at slot %u\n"), c, i);
+#endif // DEBUG_CUSTOM_CHARACTERS
+			goto sendChar;
+		} else if (lcd_custom_characters[i] == 0x7F) { //found an empty slot. create a new custom character and send it
+			lcd_custom_characters[i] = c; // mark the custom character as used
+			slotToUse = i;
+			goto createChar;
+		} else if (!(lcd_custom_characters[i] & 0x80)) { // found potentially unused slot. Remember it in case it's needed
+			slotToUse = i;
+		}
+	}
 
-const uint8_t lcd_chardata_uplevel[8] PROGMEM = {
-	B00100,
-	B01110,
-	B11111,
-	B00100,
-	B11100,
-	B00000,
-	B00000,
-	B00000}; //thanks joris
+	// If this point was reached, then there is no empty slot available.
+	// If there exists any potentially unused slot, then use that one instead.
+	// Otherwise, use the alternate form of the character.
+	if (slotToUse < 0) {
+#ifdef DEBUG_CUSTOM_CHARACTERS
+		printf_P(PSTR("used alternate for char %02x\n"), c);
+#endif // DEBUG_CUSTOM_CHARACTERS
+		goto sendChar;
+	}
 
-const uint8_t lcd_chardata_refresh[8] PROGMEM = {
-	B00000,
-	B00110,
-	B11001,
-	B11000,
-	B00011,
-	B10011,
-	B01100,
-	B00000}; //thanks joris
+#ifdef DEBUG_CUSTOM_CHARACTERS
+	printf_P(PSTR("replaced char %02x at slot %u\n"), lcd_custom_characters[slotToUse], slotToUse);
+#endif // DEBUG_CUSTOM_CHARACTERS
 
-const uint8_t lcd_chardata_folder[8] PROGMEM = {
-	B00000,
-	B11100,
-	B11111,
-	B10001,
-	B10001,
-	B11111,
-	B00000,
-	B00000}; //thanks joris
+createChar:
+	charToSend = slotToUse;
+	lcd_createChar_P(slotToUse, &Font[c - 0x80]);
+#ifdef DEBUG_CUSTOM_CHARACTERS
+	printf_P(PSTR("created char %02x at slot %u\n"), c, slotToUse);
+#endif // DEBUG_CUSTOM_CHARACTERS
 
-/*const uint8_t lcd_chardata_feedrate[8] PROGMEM = {
-	B11100,
-	B10000,
-	B11000,
-	B10111,
-	B00101,
-	B00110,
-	B00101,
-	B00000};*/ //thanks Sonny Mounicou
-
-/*const uint8_t lcd_chardata_feedrate[8] PROGMEM = {
-	B11100,
-	B10100,
-	B11000,
-	B10100,
-	B00000,
-	B00111,
-	B00010,
-	B00010};*/
-
-/*const uint8_t lcd_chardata_feedrate[8] PROGMEM = {
-	B01100,
-	B10011,
-	B00000,
-	B01100,
-	B10011,
-	B00000,
-	B01100,
-	B10011};*/
-
-const uint8_t lcd_chardata_feedrate[8] PROGMEM = {
-	B00000,
-	B00100,
-	B10010,
-	B01001,
-	B10010,
-	B00100,
-	B00000,
-	B00000};
-
-const uint8_t lcd_chardata_clock[8] PROGMEM = {
-	B00000,
-	B01110,
-	B10011,
-	B10101,
-	B10001,
-	B01110,
-	B00000,
-	B00000}; //thanks Sonny Mounicou
-
-const uint8_t lcd_chardata_arrup[8] PROGMEM = {
-	B00100,
-	B01110,
-	B11111,
-	B00000,
-	B00000,
-	B00000,
-	B00000,
-	B00000};
-
-const uint8_t lcd_chardata_arrdown[8] PROGMEM = {
-	B00000,
-	B00000,
-	B00000,
-	B00000,
-	B00000,
-	B10001,
-	B01010,
-	B00100};
-
-
-
-void lcd_set_custom_characters(void)
-{
-	lcd_createChar_P(LCD_STR_BEDTEMP[0], lcd_chardata_bedTemp);
-	lcd_createChar_P(LCD_STR_DEGREE[0], lcd_chardata_degree);
-	lcd_createChar_P(LCD_STR_THERMOMETER[0], lcd_chardata_thermometer);
-	lcd_createChar_P(LCD_STR_UPLEVEL[0], lcd_chardata_uplevel);
-	lcd_createChar_P(LCD_STR_REFRESH[0], lcd_chardata_refresh);
-	lcd_createChar_P(LCD_STR_FOLDER[0], lcd_chardata_folder);
-	lcd_createChar_P(LCD_STR_FEEDRATE[0], lcd_chardata_feedrate);
-	lcd_createChar_P(LCD_STR_CLOCK[0], lcd_chardata_clock);
-	//lcd_createChar_P(LCD_STR_ARROW_UP[0], lcd_chardata_arrup);
-	//lcd_createChar_P(LCD_STR_ARROW_DOWN[0], lcd_chardata_arrdown);
+sendChar:
+	lcd_send(charToSend, HIGH);
+	lcd_ddram_address++; // no need for preventing ddram overflow
 }
 
-void lcd_set_custom_characters_arrows(void)
-{
-	lcd_createChar_P(1, lcd_chardata_arrdown);
+static void lcd_invalidate_custom_characters() {
+	memset(lcd_custom_characters, 0x7F, sizeof(lcd_custom_characters));
 }
 
-const uint8_t lcd_chardata_arr2down[8] PROGMEM = {
-	B00000,
-	B00000,
-	B10001,
-	B01010,
-	B00100,
-	B10001,
-	B01010,
-	B00100};
-
-const uint8_t lcd_chardata_confirm[8] PROGMEM = {
-	B00000,
-	B00001,
-	B00011,
-	B10110,
-	B11100,
-	B01000,
-	B00000};
-
-void lcd_set_custom_characters_nextpage(void)
-{
-	lcd_createChar_P(1, lcd_chardata_arr2down);
-	lcd_createChar_P(2, lcd_chardata_confirm);
+void lcd_frame_start() {
+	// check all custom characters and discard unused ones
+	for (uint8_t i = 0; i < 8; i++) {
+		uint8_t c = lcd_custom_characters[i];
+		if (c == 0x7F) { //slot empty
+			continue;
+		}
+		else if (c & 0x80) { //slot was used on the last frame update, mark it as potentially unused this time
+			lcd_custom_characters[i] = c & 0x7F;
+		}
+		else { //character is no longer used (or invalid?), mark it as unused
+#ifdef DEBUG_CUSTOM_CHARACTERS
+			printf_P(PSTR("discarded char %02x at slot %u\n"), c, i);
+#endif // DEBUG_CUSTOM_CHARACTERS
+			lcd_custom_characters[i] = 0x7F;
+		}
+		
+	}
+	
+#ifdef DEBUG_CUSTOM_CHARACTERS
+	printf_P(PSTR("frame start:"));
+	for (uint8_t i = 0; i < 8; i++) {
+		printf_P(PSTR(" %02x"), lcd_custom_characters[i]);
+	}
+	printf_P(PSTR("\n"));
+#endif // DEBUG_CUSTOM_CHARACTERS
 }
-
-void lcd_set_custom_characters_degree(void)
-{
-	lcd_createChar_P(1, lcd_chardata_degree);
-}
-

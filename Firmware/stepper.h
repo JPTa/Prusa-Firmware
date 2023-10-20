@@ -41,7 +41,7 @@ void isr();
 void st_synchronize();
 
 // Set current position in steps
-void st_set_position(const long &x, const long &y, const long &z, const long &e);
+void st_set_position(const long *pos);
 void st_set_e_position(const long &e);
 
 // Get current position in steps
@@ -70,30 +70,24 @@ void invert_z_endstop(bool endstop_invert);
 void checkStepperErrors(); //Print errors detected by the stepper
 
 extern block_t *current_block;  // A pointer to the block currently being traced
-extern bool x_min_endstop;
-extern bool x_max_endstop;
-extern bool y_min_endstop;
-extern bool y_max_endstop;
 extern volatile long count_position[NUM_AXIS];
 
 void quickStop();
 #if defined(DIGIPOTSS_PIN) && DIGIPOTSS_PIN > -1
 void digitalPotWrite(int address, int value);
 #endif //defined(DIGIPOTSS_PIN) && DIGIPOTSS_PIN > -1
+
+#ifndef TMC2130
 void microstep_ms(uint8_t driver, int8_t ms1, int8_t ms2);
 void microstep_mode(uint8_t driver, uint8_t stepping);
 void st_current_init();
 void st_current_set(uint8_t driver, int current);
 void microstep_init();
 void microstep_readings();
+#endif //!TMC2130
 
 #ifdef BABYSTEPPING
   void babystep(const uint8_t axis,const bool direction); // perform a short step with a single stepper motor, outside of any convention
-#endif
-
-#if defined(FILAMENT_SENSOR) && defined(PAT9125)
-// reset the internal filament sensor state
-void st_reset_fsensor();
 #endif
 
 #endif

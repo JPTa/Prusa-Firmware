@@ -1,6 +1,7 @@
 //language.c
 #include "language.h"
 #include <avr/pgmspace.h>
+#include <avr/io.h>
 #include <avr/eeprom.h>
 #include "bootapp.h"
 
@@ -28,7 +29,7 @@ uint8_t lang_is_selected(void) { return 1; }
 #else //(LANG_MODE == 0) //secondary languages in progmem or xflash
 
 //reserved xx kbytes for secondary language table
-const char _SEC_LANG[LANG_SIZE_RESERVED] PROGMEM_I2 = "_SEC_LANG";
+const char _SEC_LANG[LANG_SIZE_RESERVED] __attribute__((aligned(SPM_PAGESIZE))) PROGMEM_I2 = "_SEC_LANG";
 
 //primary language signature
 const uint32_t _PRI_LANG_SIGNATURE[1] __attribute__((section(".progmem0"))) = {0xffffffff};
@@ -41,7 +42,7 @@ const char* lang_get_translation(const char* s)
 	if (lang_selected == 0) return s + 2; //primary language selected, return orig. str.
 	if (lang_table == 0) return s + 2; //sec. lang table not found, return orig. str.
 	uint16_t ui = pgm_read_word(((uint16_t*)s)); //read string id
-	if (ui == 0xffff) return s + 2; //translation not found, return orig. str.
+	if (ui == 0xffff) return s + 2; //id not assigned, return orig. str.
 	ui = pgm_read_word(((uint16_t*)(((char*)lang_table + 16 + ui*2)))); //read relative offset
 	if (pgm_read_byte(((uint8_t*)((char*)lang_table + ui))) == 0) //read first character
 		return s + 2;//zero length string == not translated, return orig. str.
@@ -211,16 +212,46 @@ const char* lang_get_name_by_code(uint16_t code)
 	case LANG_CODE_FR: return _n("Francais");
 	case LANG_CODE_IT: return _n("Italiano");
 	case LANG_CODE_PL: return _n("Polski");
-#ifdef COMMUNITY_LANG_SUPPORT //Community language support
-#ifdef COMMUNITY_LANG_NL
-	case LANG_CODE_NL: return _n("Nederlands"); //community contribution
-#endif // COMMUNITY_LANG_NL
+#ifdef COMMUNITY_LANGUAGE_SUPPORT //Community language support
+#ifdef COMMUNITY_LANG_GROUP1_NL
+	case LANG_CODE_NL: return _n("Nederlands"); //community Dutch contribution
+#endif // COMMUNITY_LANG_GROUP1_NL
+#ifdef COMMUNITY_LANG_GROUP1_SV
+	case LANG_CODE_SV: return _n("Svenska"); //community Swedish contribution
+#endif // COMMUNITY_LANG_GROUP1_SV
+#ifdef COMMUNITY_LANG_GROUP1_NO
+	case LANG_CODE_NO: return _n("Norsk"); //community Swedish contribution
+#endif // COMMUNITY_LANG_GROUP1_NO
+#ifdef COMMUNITY_LANG_GROUP1_DA
+	case LANG_CODE_DA: return _n("Dansk"); //community Danish contribution
+#endif // COMMUNITY_LANG_GROUP1_DA
+#ifdef COMMUNITY_LANG_GROUP1_SK
+	case LANG_CODE_SK: return _n("Slovencina"); //community Slovak contribution
+#endif // COMMUNITY_LANG_GROUP1_SK
+#ifdef COMMUNITY_LANG_GROUP1_SL
+	case LANG_CODE_SL: return _n("Slovenscina"); //community Slovanian contribution
+#endif // COMMUNITY_LANG_GROUP1_SL
+#ifdef COMMUNITY_LANG_GROUP1_HU
+	case LANG_CODE_HU: return _n("Magyar"); //community Hungarian contribution
+#endif // COMMUNITY_LANG_GROUP1_HU
+#ifdef COMMUNITY_LANG_GROUP1_LB
+	case LANG_CODE_LB: return _n("Letzebuergesch"); //community Luxembourgish contribution
+#endif // COMMUNITY_LANG_GROUP1_LB
+#ifdef COMMUNITY_LANG_GROUP1_HR
+	case LANG_CODE_HR: return _n("Hrvatski"); //community Croatian contribution
+#endif // COMMUNITY_LANG_GROUP1_HR
+#ifdef COMMUNITY_LANG_GROUP2_LT
+	case LANG_CODE_LT: return _n("Lietuviu"); //community Lithuanian contribution
+#endif // COMMUNITY_LANG_GROUP2_LT
+#ifdef COMMUNITY_LANG_GROUP1_RO
+	case LANG_CODE_RO: return _n("Romana"); //community Romanian contribution
+#endif // COMMUNITY_LANG_GROUP1_RO
 
 //Use the 3 lines below as a template and replace 'QR' and 'New language'
-//#ifdef COMMUNITY_LANG_QR 
+//#ifdef COMMUNITY_LANG_GROUP1_QR 
 //	case LANG_CODE_QR: return _n("New language"); //community contribution
-//#endif // COMMUNITY_LANG_QR
-#endif // COMMUNITY_LANG_SUPPORT
+//#endif // COMMUNITY_LANG_GROUP1_QR
+#endif // COMMUNITY_LANGUAGE_SUPPORT
 	}
 	return _n("??");
 }
@@ -245,7 +276,7 @@ const char* lang_get_sec_lang_str_by_id(uint16_t id)
 	return ui + pgm_read_word(((uint16_t*)(ui + 16 + id * 2))); //read relative offset and return calculated pointer
 }
 
-uint16_t lang_print_sec_lang(FILE* out)
+uint16_t lang_print_sec_lang()
 {
 	printf_P(_n("&_SEC_LANG        = 0x%04x\n"), &_SEC_LANG);
 	printf_P(_n("sizeof(_SEC_LANG) = 0x%04x\n"), sizeof(_SEC_LANG));
@@ -267,7 +298,7 @@ uint16_t lang_print_sec_lang(FILE* out)
 	puts_P(_n(" strings:\n"));
 	uint16_t ui = _SEC_LANG_TABLE; //table pointer
 	for (ui = 0; ui < _lt_count; ui++)
-		fprintf_P(out, _n("  %3d %S\n"), ui, lang_get_sec_lang_str_by_id(ui));
+		printf_P(_n("  %3d %S\n"), ui, lang_get_sec_lang_str_by_id(ui));
 	return _lt_count;
 }
 #endif //DEBUG_SEC_LANG
@@ -279,5 +310,5 @@ void lang_boot_update_start(uint8_t lang)
 {
 	uint8_t cnt = lang_get_count();
 	if ((lang < 2) || (lang > cnt)) return; //only languages from xflash can be selected
-	bootapp_reboot_user0(lang << 4);
+	bootapp_reboot_user0(lang << 3);
 }
