@@ -59,8 +59,9 @@
 // the language flag, without breaking existing build mechanisms.
 #ifndef CMAKE_CONTROL
 //LANG - Multi-language support
-#define LANG_MODE              0 //Kuo primary language only
+#define LANG_MODE              0 // primary language only
 //#define LANG_MODE              1 // sec. language support
+#endif
 
 #define LANG_SIZE_RESERVED     0x3500 // reserved space for secondary language (13568 bytes).
                                       // 0x3D00 Maximum 15616 bytes as it depends on xflash_layout.h

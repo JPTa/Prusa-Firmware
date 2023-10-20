@@ -190,7 +190,6 @@ tmc2130_chopper_config_t tmc2130_chopper_config[NUM_AXIS] = {
 	}
 #endif
 };
-//Kuo ===
 
 bool tmc2130_sg_stop_on_crash = true;
 uint8_t tmc2130_sg_crash = 0;
