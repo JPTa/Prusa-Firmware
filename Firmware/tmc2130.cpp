@@ -183,10 +183,10 @@ tmc2130_chopper_config_t tmc2130_chopper_config[NUM_AXIS] = {
 #else // !TMC2130_CNSTOFF_E
 	{ // E axis
 		.toff = TMC2130_TOFF_E,
-		.hstr = 5,
-		.hend = 1,
-		.tbl = 2,
-		.res = 0
+		.hstr = TMC2130_HSTR_E,
+		.hend = TMC2130_HEND_E,
+		.tbl =  TMC2130_TBL_E,
+		.res =  TMC2130_RES_E
 	}
 #endif
 };

@@ -105,9 +105,6 @@
 //#define SLICETHERMISTOR //uncomment for Slice Thermistor
 //#define SLICEMAGNUM //uncomment to adjust MMU2S filament laod/unload distances for Slice Magnum
 
-//====== Kuo extrude before unload filament
-#define EXTRUDE_BEFORE_UNLOAD //uncomment to always extrude filament a short distance before unloading. Forms smaller tip.
-
 //---------------------------- Kuo End of defines one normally needs to change ----------------------------
 
 #ifdef X_AXIS_MOTOR_09 //Kuo adjust min acceptable homing count for 0.9 motors
@@ -592,8 +589,6 @@
 #else
   #define HEATER_0_MINTEMP 10
 #endif //Kuo ===
-#define HEATER_1_MINTEMP 5
-#define HEATER_2_MINTEMP 5
 #define HEATER_MINTEMP_DELAY 15000                // [ms] ! if changed, check maximal allowed value @ ShortTimer
 #if HEATER_MINTEMP_DELAY>USHRT_MAX
 #error "Check maximal allowed value @ ShortTimer (see HEATER_MINTEMP_DELAY definition)"
@@ -644,67 +639,6 @@
 #define EXTRUDER_ALTFAN_DETECT
 #define EXTRUDER_ALTFAN_SPEED_SILENT 255
 
-
-/*------------------------------------
- LOAD/UNLOAD FILAMENT SETTINGS
- *------------------------------------*/
-// Load filament distances and rates
-#ifdef BONDTECH_PRUSA_UPGRADE_MK3
-  #define LOAD_FILAMENT_DIST_1 40  //Kuo BMG load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 40 //10 mm farther
-  #define LOAD_FILAMENT_RATE_2 300
-#elif defined(BONDTECH_PRUSA_UPGRADE_MK3S)
-  #define LOAD_FILAMENT_DIST_1 40  //Kuo BMG load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 40 //10 mm farther
-  #define LOAD_FILAMENT_RATE_2 300
-#elif defined(SKELESTRUDER)
-  #define LOAD_FILAMENT_DIST_1 40  //JTa: Skele load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 20  // 10 mm less for Skele
-  #define LOAD_FILAMENT_RATE_2 300
-#elif defined(BEAR_EXXA)
-  #define LOAD_FILAMENT_DIST_1 40  //JTa: BearExxa load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 36  // 6 mm more for BearExxa
-  #define LOAD_FILAMENT_RATE_2 300
-#else
-  #define LOAD_FILAMENT_DIST_1 40  //Kuo Prusa default load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 30 
-  #define LOAD_FILAMENT_RATE_2 300
-#endif
-
-// Unload filament distances and rates
-#ifdef BONDTECH_PRUSA_UPGRADE_MK3
-  #define UNLOAD_FILAMENT_DIST_0 3  //Kuo extrude slightly first to form finer tip
-  #define UNLOAD_FILAMENT_RATE_0 60
-  #define UNLOAD_FILAMENT_DIST_1 -45  //Kuo BMG unload
-  #define UNLOAD_FILAMENT_RATE_1 5200
-  #define UNLOAD_FILAMENT_DIST_2 -15
-  #define UNLOAD_FILAMENT_RATE_2 1000
-  #define UNLOAD_FILAMENT_DIST_3 -40 //20 mm farther
-  #define UNLOAD_FILAMENT_RATE_3 1000
-#elif defined(BEAR_EXXA)
-  #define UNLOAD_FILAMENT_DIST_0 3  //Kuo extrude slightly first to form finer tip
-  #define UNLOAD_FILAMENT_RATE_0 60
-  #define UNLOAD_FILAMENT_DIST_1 -45  //JTA BearExxa unload
-  #define UNLOAD_FILAMENT_RATE_1 5200
-  #define UNLOAD_FILAMENT_DIST_2 -15
-  #define UNLOAD_FILAMENT_RATE_2 1000
-  #define UNLOAD_FILAMENT_DIST_3 -30 //10 mm farther
-  #define UNLOAD_FILAMENT_RATE_3 1000
-#else
-  #define UNLOAD_FILAMENT_DIST_0 3  //Kuo extrude slightly first to form finer tip
-  #define UNLOAD_FILAMENT_RATE_0 60
-  #define UNLOAD_FILAMENT_DIST_1 -45  //Kuo Prusa default unload 53 is end of std PTFE on BNBSX
-  #define UNLOAD_FILAMENT_RATE_1 5200
-  #define UNLOAD_FILAMENT_DIST_2 -15
-  #define UNLOAD_FILAMENT_RATE_2 1000
-  #define UNLOAD_FILAMENT_DIST_3 -20
-  #define UNLOAD_FILAMENT_RATE_3 1000
-#endif
 
 #define FANCHECK_AUTO_PRINT_FAN_THRS 70 //[RPS] - Used during selftest to identify swapped fans automatically
 #define FANCHECK_AUTO_FAIL_THRS 20 //[RPS] - Used during selftest to identify a faulty fan
@@ -1009,7 +943,7 @@
 // we just need to shift to the nearest fullstep, but we need a move which is at least
 // "dropsegments" steps long. All the above rules still need to apply.
 #define UVLO_TINY_Z_AXIS_SHIFT 0.16
-// If power panic occured, and the current temperature is higher then target temperature before interrupt minus this offset, print will be recovered automatically.
+// If power panic occured, and the current temperature is higher then target temperature before interrupt minus this offset, print will be recovered automatically. 
 #define AUTOMATIC_UVLO_BED_TEMP_OFFSET 5 
 
 #define HEATBED_V2
@@ -1024,6 +958,14 @@
 #define MMU_HWRESET
 #define MMU_DEBUG //print communication between MMU and printer on serial
 #define MMU_HAS_CUTTER
+
+// This is experimental feature requested by our test department.
+// There is no known use for ordinary user. If enabled by this macro
+// and enabled from printer menu (not enabled by default). It cuts filament
+// every time when switching filament from gcode. MMU_HAS_CUTTER needs to be
+// defined.
+
+//#define MMU_ALWAYS_CUT
 
 // MMU Error pause position
 #define MMU_ERR_X_PAUSE_POS 125

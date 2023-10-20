@@ -11,8 +11,8 @@
 #define PRINTER_TYPE PRINTER_MK3S
 #define PRINTER_NAME PRINTER_MK3S_NAME
 #define PRINTER_NAME_ALTERNATE PRINTER_MK3_NAME //the other similar printer to this.
-#define PRINTER_MMU_TYPE PRINTER_MK3S_MMU3
-#define PRINTER_MMU_NAME PRINTER_MK3S_MMU3_NAME
+#define PRINTER_MMU_TYPE PRINTER_MK3S_MMU2S
+#define PRINTER_MMU_NAME PRINTER_MK3S_MMU2S_NAME
 #define FILAMENT_SIZE "1_75mm_MK3S"
 #define NOZZLE_TYPE "E3Dv6full"
 
@@ -103,9 +103,6 @@
 //====== Kuo Slice Support
 //#define SLICETHERMISTOR //uncomment for Slice Thermistor
 //#define SLICEMAGNUM //uncomment to adjust MMU2S filament laod/unload distances for Slice Magnum
-
-//====== Kuo extrude before unload filament
-#define EXTRUDE_BEFORE_UNLOAD //uncomment to always extrude filament a short distance before unloading. Forms smaller tip.
 
 //---------------------------- Kuo End of defines one normally needs to change ----------------------------
 
@@ -287,6 +284,7 @@
 // Filament sensor
 #define FILAMENT_SENSOR
 #define FILAMENT_SENSOR_TYPE FSENSOR_IR_ANALOG
+
 #define FSENSOR_PROBING
 
 // Backlash - 
@@ -591,8 +589,6 @@
 #else
   #define HEATER_0_MINTEMP 10
 #endif //Kuo ===
-#define HEATER_1_MINTEMP 5
-#define HEATER_2_MINTEMP 5
 #define HEATER_MINTEMP_DELAY 15000                // [ms] ! if changed, check maximal allowed value @ ShortTimer
 #if HEATER_MINTEMP_DELAY>USHRT_MAX
 #error "Check maximal allowed value @ ShortTimer (see HEATER_MINTEMP_DELAY definition)"
@@ -641,69 +637,7 @@
 #define EXTRUDER_AUTO_FAN_TEMPERATURE 50
 #define EXTRUDER_AUTO_FAN_SPEED   255  // == full speed
 #define EXTRUDER_ALTFAN_DETECT
-#define EXTRUDER_ALTFAN_SPEED_SILENT 255
-
-
-/*------------------------------------
- LOAD/UNLOAD FILAMENT SETTINGS
- *------------------------------------*/
-// Load filament distances and rates
-#ifdef BONDTECH_PRUSA_UPGRADE_MK3
-  #define LOAD_FILAMENT_DIST_1 40  //Kuo BMG load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 40 //10 mm farther
-  #define LOAD_FILAMENT_RATE_2 300
-#elif defined(BONDTECH_PRUSA_UPGRADE_MK3S)
-  #define LOAD_FILAMENT_DIST_1 40  //Kuo BMG load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 40 //10 mm farther
-  #define LOAD_FILAMENT_RATE_2 300
-#elif defined(SKELESTRUDER)
-  #define LOAD_FILAMENT_DIST_1 40  //JTa: Skele load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 20  // 10 mm less for Skele
-  #define LOAD_FILAMENT_RATE_2 300
-#elif defined(BEAR_EXXA)
-  #define LOAD_FILAMENT_DIST_1 40  //JTa: BearExxa load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 36  // 6 mm more for BearExxa
-  #define LOAD_FILAMENT_RATE_2 300
-#else
-  #define LOAD_FILAMENT_DIST_1 40  //Kuo Prusa default load
-  #define LOAD_FILAMENT_RATE_1 400
-  #define LOAD_FILAMENT_DIST_2 30 
-  #define LOAD_FILAMENT_RATE_2 300
-#endif
-
-// Unload filament distances and rates
-#ifdef BONDTECH_PRUSA_UPGRADE_MK3
-  #define UNLOAD_FILAMENT_DIST_0 3  //Kuo extrude slightly first to form finer tip
-  #define UNLOAD_FILAMENT_RATE_0 60
-  #define UNLOAD_FILAMENT_DIST_1 -45  //Kuo BMG unload
-  #define UNLOAD_FILAMENT_RATE_1 5200
-  #define UNLOAD_FILAMENT_DIST_2 -15
-  #define UNLOAD_FILAMENT_RATE_2 1000
-  #define UNLOAD_FILAMENT_DIST_3 -40 //20 mm farther
-  #define UNLOAD_FILAMENT_RATE_3 1000
-#elif defined(BEAR_EXXA)
-  #define UNLOAD_FILAMENT_DIST_0 3  //Kuo extrude slightly first to form finer tip
-  #define UNLOAD_FILAMENT_RATE_0 60
-  #define UNLOAD_FILAMENT_DIST_1 -45  //JTA BearExxa unload
-  #define UNLOAD_FILAMENT_RATE_1 5200
-  #define UNLOAD_FILAMENT_DIST_2 -15
-  #define UNLOAD_FILAMENT_RATE_2 1000
-  #define UNLOAD_FILAMENT_DIST_3 -30 //10 mm farther
-  #define UNLOAD_FILAMENT_RATE_3 1000
-#else
-  #define UNLOAD_FILAMENT_DIST_0 3  //Kuo extrude slightly first to form finer tip
-  #define UNLOAD_FILAMENT_RATE_0 60
-  #define UNLOAD_FILAMENT_DIST_1 -45  //Kuo Prusa default unload 53 is end of std PTFE on BNBSX
-  #define UNLOAD_FILAMENT_RATE_1 5200
-  #define UNLOAD_FILAMENT_DIST_2 -15
-  #define UNLOAD_FILAMENT_RATE_2 1000
-  #define UNLOAD_FILAMENT_DIST_3 -20
-  #define UNLOAD_FILAMENT_RATE_3 1000
-#endif
+#define EXTRUDER_ALTFAN_SPEED_SILENT 128
 
 #define FANCHECK_AUTO_PRINT_FAN_THRS 70 //[RPS] - Used during selftest to identify swapped fans automatically
 #define FANCHECK_AUTO_FAIL_THRS 20 //[RPS] - Used during selftest to identify a faulty fan
@@ -930,7 +864,7 @@
 // 10 is 100k RS thermistor 198-961 (4.7k pullup)
 // 11 is 100k beta 3950 1% thermistor (4.7k pullup)
 // 12 is 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup) (calibrated for Makibox hot bed)
-// 13 is 100k Hisens 3950  1% up to 300Â°C for hotend "Simple ONE " & "Hotend "All In ONE"
+// 13 is 100k Hisens 3950  1% up to 300°C for hotend "Simple ONE " & "Hotend "All In ONE"
 // 20 is the PT100 circuit found in the Ultimainboard V2.x
 // 60 is 100k Maker's Tool Works Kapton Bed Thermistor beta=3950
 //
