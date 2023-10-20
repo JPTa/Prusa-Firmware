@@ -64,7 +64,7 @@ union ChopConfU {
 		uint32_t diss2g : 1;   // Short to GND protection disable
 		uint32_t reserved : 1; // Reserved, set to 0
 		constexpr S(bool vsense, uint8_t mres)
-			: toff(TMC2130_TOFF_XYZ)
+			: toff(TMC2130_TOFF_X)
 			, hstrt(5)
 			, hend(1)
 			, fd(0)
@@ -132,7 +132,7 @@ static constexpr PWMConfU pwmconf_Ecool = PWMConfU(PWMCONF_REG(TMC2130_PWM_AMPL_
 uint8_t tmc2130_mres[4] = {0, 0, 0, 0}; //will be filed at begin of init
 
 uint8_t tmc2130_sg_thr[4] = {TMC2130_SG_THRS_X, TMC2130_SG_THRS_Y, TMC2130_SG_THRS_Z, TMC2130_SG_THRS_E};
-static uint8_t tmc2130_sg_thr_home[4] = TMC2130_SG_THRS_HOME;
+uint8_t tmc2130_sg_thr_home[4] = TMC2130_SG_THRS_HOME;
 
 
 uint8_t tmc2130_sg_homing_axes_mask = 0x00;

@@ -227,7 +227,7 @@ static void lcd_begin(uint8_t clear)
 
     lcd_no_display();
     lcd_command(LCD_FUNCTIONSET | lcd_displayfunction); // Set # lines, font size, etc.
-    lcd_clear();
+    if (clear) lcd_clear();
     lcd_command(LCD_ENTRYMODESET | lcd_displaymode); // Set Entry Mode
     lcd_home();
     lcd_display();

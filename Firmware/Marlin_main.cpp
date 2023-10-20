@@ -153,7 +153,7 @@ CardReader card;
 #define DEFAULT_RETRACTION_MM 4 //MM
 
 float default_retraction = DEFAULT_RETRACTION;
-
+float homing_feedrate[] = HOMING_FEEDRATE;
 
 //Although this flag and many others like this could be represented with a struct/bitfield for each axis (more readable and efficient code), the implementation
 //would not be standard across all platforms. That being said, the code will continue to use bitmasks for independent axis.
@@ -2786,8 +2786,8 @@ static void gcode_G28(bool home_x_axis, bool home_y_axis, bool home_z_axis)
 // G80 - Automatic mesh bed leveling
 static void gcode_G80()
 {
-    constexpr float XY_AXIS_FEEDRATE = (homing_feedrate[X_AXIS] * 3) / 60;
-    constexpr float Z_LIFT_FEEDRATE = homing_feedrate[Z_AXIS] / 60;
+    float XY_AXIS_FEEDRATE = (homing_feedrate[X_AXIS] * 3) / 60;
+    float Z_LIFT_FEEDRATE = homing_feedrate[Z_AXIS] / 60;
     constexpr float Z_CALIBRATION_THRESHOLD = 0.35f;
     constexpr float MESH_HOME_Z_SEARCH_FAST = 0.35f;
     st_synchronize();
