@@ -21,7 +21,7 @@
 #include "Configuration.h"
 #include "pins.h"
 #include "Timer.h"
-#include "mmu2.h"
+#include "printer_state.h"
 
 #ifndef AT90USB
 #define  HardwareSerial_h // trick to disable the standard HWserial
@@ -62,8 +62,6 @@
 #else
   #define MYSERIAL MSerial
 #endif
-
-#include "lcd.h"
 
 #define SERIAL_PROTOCOL(x) (MYSERIAL.print(x))
 #define SERIAL_PROTOCOL_F(x,y) (MYSERIAL.print(x,y))
@@ -123,35 +121,20 @@ void manage_inactivity(bool ignore_stepper_queue=false);
 #endif
 
 #if defined(Y_ENABLE_PIN) && Y_ENABLE_PIN > -1
-  #ifdef Y_DUAL_STEPPER_DRIVERS
-    #define  enable_y() { WRITE(Y_ENABLE_PIN, Y_ENABLE_ON); WRITE(Y2_ENABLE_PIN,  Y_ENABLE_ON); }
-    #define disable_y() { WRITE(Y_ENABLE_PIN,!Y_ENABLE_ON); WRITE(Y2_ENABLE_PIN, !Y_ENABLE_ON); axis_known_position[Y_AXIS] = false; }
-  #else
-    #define  enable_y() WRITE(Y_ENABLE_PIN, Y_ENABLE_ON)
-    #define disable_y() { WRITE(Y_ENABLE_PIN,!Y_ENABLE_ON); axis_known_position[Y_AXIS] = false; }
-  #endif
+  #define  enable_y() WRITE(Y_ENABLE_PIN, Y_ENABLE_ON)
+  #define disable_y() { WRITE(Y_ENABLE_PIN,!Y_ENABLE_ON); axis_known_position[Y_AXIS] = false; }
 #else
   #define enable_y() ;
   #define disable_y() ;
 #endif
 
-#if defined(Z_ENABLE_PIN) && Z_ENABLE_PIN > -1 
+#if defined(Z_ENABLE_PIN) && Z_ENABLE_PIN > -1
 	#if defined(Z_AXIS_ALWAYS_ON)
-		  #ifdef Z_DUAL_STEPPER_DRIVERS
-			#define  poweron_z() { WRITE(Z_ENABLE_PIN, Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN, Z_ENABLE_ON); }
-			#define poweroff_z() { WRITE(Z_ENABLE_PIN,!Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN,!Z_ENABLE_ON); axis_known_position[Z_AXIS] = false; }
-		  #else
 			#define  poweron_z() WRITE(Z_ENABLE_PIN, Z_ENABLE_ON)
 			#define poweroff_z() {}
-		  #endif
 	#else
-		#ifdef Z_DUAL_STEPPER_DRIVERS
-			#define  poweron_z() { WRITE(Z_ENABLE_PIN, Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN, Z_ENABLE_ON); }
-			#define poweroff_z() { WRITE(Z_ENABLE_PIN,!Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN,!Z_ENABLE_ON); axis_known_position[Z_AXIS] = false; }
-		#else
 			#define  poweron_z() WRITE(Z_ENABLE_PIN, Z_ENABLE_ON)
 			#define poweroff_z() { WRITE(Z_ENABLE_PIN,!Z_ENABLE_ON); axis_known_position[Z_AXIS] = false; }
-		#endif
 	#endif
 #else
     #define  poweron_z() {}
@@ -196,6 +179,7 @@ void kill(const char *full_screen_message = NULL);
 void finishAndDisableSteppers();
 
 void UnconditionalStop();                   // Stop heaters, motion and clear current print status
+void ConditionalStop();                     // Similar to UnconditionalStop, but doesn't disable heaters
 void ThermalStop(bool allow_pause = false); // Emergency stop used by overtemp functions which allows
                                             // recovery (with pause=true)
 bool IsStopped();                           // Returns true if the print has been stopped
@@ -251,6 +235,7 @@ uint16_t restore_interrupted_gcode();
 float __attribute__((noinline)) get_feedrate_mm_s(const float feedrate_mm_min);
 
 #ifdef TMC2130
+void check_Z_crash(void);
 void homeaxis(uint8_t axis, uint8_t cnt = 1, uint8_t* pstep = 0);
 #else
 void homeaxis(uint8_t axis, uint8_t cnt = 1);
@@ -262,18 +247,13 @@ extern float retract_length_swap;
 extern float retract_recover_length_swap;
 #endif
 
-extern uint32_t starttime; // milliseconds
-extern uint32_t pause_time; // milliseconds
-extern uint32_t start_pause_print; // milliseconds
 extern ShortTimer usb_timer;
 extern bool processing_tcode;
 extern bool homing_flag;
 extern uint32_t total_filament_used; // mm/100 or 10um
 
 /// @brief Save print statistics to EEPROM
-/// @param _total_filament_used has unit mm/100 or 10um
-/// @param _total_print_time has unit minutes, for example 123 minutes
-void save_statistics(uint32_t _total_filament_used, uint32_t _total_print_time);
+void save_statistics();
 
 extern int fan_edge_counter[2];
 extern int fan_speed[2];
@@ -283,6 +263,7 @@ extern int fan_speed[2];
 #define active_extruder 0
 
 extern bool mesh_bed_leveling_flag;
+extern bool did_pause_print;
 
 // save/restore printing
 extern bool saved_printing;
@@ -314,7 +295,17 @@ extern LongTimer safetyTimer;
 // the print is paused, that still counts as a "running" print.
 bool printJobOngoing();
 
+// Make debug_printer_states available everywhere
+#ifdef DEBUG_PRINTER_STATES
+void debug_printer_states();
+#endif //DEBUG_PRINTER_STATES
+
+// Printing is paused according to SD or host indicators
+bool printingIsPaused();
+
 bool printer_active();
+
+bool printer_recovering();
 
 //! Beware - mcode_in_progress is set as soon as the command gets really processed,
 //! which is not the same as posting the M600 command into the command queue
@@ -342,7 +333,7 @@ bool babystep_allowed_strict();
 
 extern void calculate_extruder_multipliers();
 
-// Similar to the default Arduino delay function, 
+// Similar to the default Arduino delay function,
 // but it keeps the background tasks running.
 extern void delay_keep_alive(unsigned int ms);
 
@@ -358,9 +349,6 @@ void bed_analysis(float x_dimension, float y_dimension, int x_points_num, int y_
 void bed_check(float x_dimension, float y_dimension, int x_points_num, int y_points_num, float shift_x, float shift_y);
 #endif //HEATBED_ANALYSIS
 float temp_comp_interpolation(float temperature);
-#if 0
-void show_fw_version_warnings();
-#endif
 uint8_t check_printer_version();
 
 #ifdef PINDA_THERMISTOR
@@ -378,8 +366,13 @@ void save_print_file_state();
 void restore_print_file_state();
 void save_planner_global_state();
 void refresh_print_state_in_ram();
+
+/// Updates the feedrate multiplier when a print is saved such that
+/// it is not overwritten when the print is later resumed
+void refresh_saved_feedrate_multiplier_in_ram();
 void clear_print_state_in_ram();
 extern void stop_and_save_print_to_ram(float z_move, float e_move);
+void restore_file_from_sd();
 void restore_extruder_temperature_from_ram();
 extern void restore_print_from_ram_and_continue(float e_move);
 extern void cancel_saved_printing();
@@ -403,7 +396,7 @@ extern uint8_t calc_percent_done();
 /*enum MarlinBusyState {
 	NOT_BUSY,           // Not in a handler
 	IN_HANDLER,         // Processing a GCode
-	IN_PROCESS,         // Known to be blocking command input (as in G29)
+	IN_PROCESS,         // Known to be blocking command input
 	PAUSED_FOR_USER,    // Blocking pending any input
 	PAUSED_FOR_INPUT    // Blocking pending text input (concept)
 };*/
@@ -443,10 +436,10 @@ void gcode_M701(float fastLoadLength, uint8_t mmuSlotIndex);
 #define UVLO !(PINE & (1<<4))
 
 
-void M600_load_filament();
-void M600_load_filament_movements();
-void M600_wait_for_user(float HotendTempBckp);
-void M600_check_state(float nozzle_temp);
+void M600_load_filament(const char* filament_name);
+void M600_load_filament_movements(const char* filament_name);
+void M600_wait_for_user();
+bool M600_check_state_and_repeat(const char* filament_name);
 void load_filament_final_feed();
 void marlin_wait_for_click();
 float raise_z(float delta);
@@ -456,5 +449,4 @@ extern "C" void softReset();
 void stack_error();
 
 extern uint32_t IP_address;
-
 #endif

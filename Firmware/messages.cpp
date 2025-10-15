@@ -18,7 +18,8 @@ const char MSG_BED_HEATING[] PROGMEM_I1 = ISTR("Bed Heating"); ////MSG_BED_HEATI
 const char MSG_BED_LEVELING_FAILED_POINT_LOW[] PROGMEM_I1 = ISTR("Bed leveling failed. Sensor didn't trigger. Debris on nozzle? Waiting for reset."); ////MSG_BED_LEVELING_FAILED_POINT_LOW c=20 r=6
 const char MSG_BED_SKEW_OFFSET_DETECTION_FITTING_FAILED[] PROGMEM_I1 = ISTR("XYZ calibration failed. Please consult the manual."); ////MSG_BED_SKEW_OFFSET_DETECTION_FITTING_FAILED c=20 r=8
 const char MSG_BELT_STATUS[] PROGMEM_I1 = ISTR("Belt status");////MSG_BELT_STATUS c=18
-const char MSG_CANCEL[] PROGMEM_I1 = ISTR(">Cancel");////MSG_CANCEL c=10
+const char MSG_EJECT[] PROGMEM_I1 = ISTR("Eject"); ////MSG_EJECT c=9
+const char MSG_CANCEL[] PROGMEM_I1 = ISTR("Cancel");////MSG_CANCEL c=9
 const char MSG_CALIBRATE_Z_AUTO[] PROGMEM_I1 = ISTR("Calibrating Z"); ////MSG_CALIBRATE_Z_AUTO c=20 r=2
 const char MSG_CARD_MENU[] PROGMEM_I1 = ISTR("Print from SD"); ////MSG_CARD_MENU c=18
 const char MSG_CHECKING_X[] PROGMEM_I1 = ISTR("Checking X axis"); ////MSG_CHECKING_X c=20
@@ -34,7 +35,6 @@ const char MSG_ERROR[] PROGMEM_I1 = ISTR("ERROR:"); ////MSG_ERROR c=10
 const char MSG_EXTRUDER[] PROGMEM_I1 = ISTR("Extruder"); ////MSG_EXTRUDER c=17
 const char MSG_FANS_CHECK[] PROGMEM_I1 = ISTR("Fans check"); ////MSG_FANS_CHECK c=13
 const char MSG_FIL_RUNOUTS[] PROGMEM_I1 = ISTR("Fil. runouts"); ////MSG_FIL_RUNOUTS c=15
-const char MSG_FILAMENT[] PROGMEM_I1 = ISTR("Filament"); ////MSG_FILAMENT c=17
 const char MSG_FAN_SPEED[] PROGMEM_I1 = ISTR("Fan speed"); ////MSG_FAN_SPEED c=14
 const char MSG_HOTEND_FAN_SPEED[] PROGMEM_I1 = ISTR("Hotend fan:");////MSG_HOTEND_FAN_SPEED c=15
 const char MSG_PRINT_FAN_SPEED[] PROGMEM_I1 = ISTR("Print fan:"); ////MSG_PRINT_FAN_SPEED c=15
@@ -76,6 +76,7 @@ const char MSG_NO[] PROGMEM_I1 = ISTR("No"); ////MSG_NO c=4
 const char MSG_NOZZLE[] PROGMEM_I1 = ISTR("Nozzle"); ////MSG_NOZZLE c=10
 const char MSG_PAPER[] PROGMEM_I1 = ISTR("Place a sheet of paper under the nozzle during the calibration of first 4 points. If the nozzle catches the paper, power off the printer immediately."); ////MSG_PAPER c=20 r=8
 const char MSG_PAUSE_PRINT[] PROGMEM_I1 = ISTR("Pause print");////MSG_PAUSE_PRINT c=18
+const char MSG_PRINT_PAUSED[] PROGMEM_I1 = ISTR("Print paused");////MSG_PRINT_PAUSED c=20
 const char MSG_PLACE_STEEL_SHEET[] PROGMEM_I1 = ISTR("Please place steel sheet on heatbed."); ////MSG_PLACE_STEEL_SHEET c=20 r=4
 const char MSG_PLEASE_WAIT[] PROGMEM_I1 = ISTR("Please wait"); ////MSG_PLEASE_WAIT c=20
 const char MSG_POWER_FAILURES[] PROGMEM_I1 = ISTR("Power failures"); ////MSG_POWER_FAILURES c=15
@@ -101,6 +102,15 @@ const char MSG_SELFTEST_MOTOR[] PROGMEM_I1 = ISTR("Motor"); ////MSG_SELFTEST_MOT
 const char MSG_SELFTEST_FILAMENT_SENSOR[] PROGMEM_I1 = ISTR("Filament sensor"); ////MSG_SELFTEST_FILAMENT_SENSOR c=17
 const char MSG_SELFTEST_WIRINGERROR[] PROGMEM_I1 = ISTR("Wiring error"); ////MSG_SELFTEST_WIRINGERROR c=18
 const char MSG_SETTINGS[] PROGMEM_I1 = ISTR("Settings"); ////MSG_SETTINGS c=18
+#ifndef REPLACE_SETREADY
+const char MSG_SET_READY[] PROGMEM_I1 = ISTR("Set Ready"); ////MSG_SET_READY c=18
+const char MSG_SET_NOT_READY[] PROGMEM_I1 = ISTR("Set not Ready"); ////MSG_SET_NOT_READY c=18
+#else
+const char MSG_HOSTPRINT[] PROGMEM_I1 = ISTR("Print from host"); ////MSG_HOSTPRINT c=18
+#endif //REPLACE_SETREADY
+#ifdef HOST_SHUTDOWN
+const char MSG_SHUTDOWN_HOST[] PROGMEM_I1 = ISTR("Shutdown host"); ////MSG_SHUTDOWN_HOST c=18
+#endif //HOST_SHUTOWN
 const char MSG_SELECT_LANGUAGE[] PROGMEM_I1 = ISTR("Select language"); ////MSG_SELECT_LANGUAGE c=18
 const char MSG_SORTING_FILES[] PROGMEM_I1 = ISTR("Sorting files"); ////MSG_SORTING_FILES c=20
 const char MSG_TOTAL[] PROGMEM_I1 = ISTR("Total"); ////MSG_TOTAL c=6
@@ -115,11 +125,12 @@ const char MSG_SILENT[] PROGMEM_I1 = ISTR("Silent"); ////MSG_SILENT c=7
 const char MSG_NORMAL[] PROGMEM_I1 = ISTR("Normal"); ////MSG_NORMAL c=7
 const char MSG_STEALTH[] PROGMEM_I1 = ISTR("Stealth"); ////MSG_STEALTH c=7
 const char MSG_STEEL_SHEET_CHECK[] PROGMEM_I1 = ISTR("Is steel sheet on heatbed?"); ////MSG_STEEL_SHEET_CHECK c=20 r=3
+const char MSG_Z_CALIBRATION_PROMPT[] PROGMEM_I1 = ISTR("Z calibration recommended. Run it now?"); ////MSG_Z_CALIBRATION_PROMPT c=20 r=3
 const char MSG_STOP_PRINT[] PROGMEM_I1 = ISTR("Stop print"); ////MSG_STOP_PRINT c=18
 const char MSG_STOPPED[] PROGMEM_I1 = ISTR("STOPPED."); ////MSG_STOPPED c=20
 const char MSG_PINDA_CALIBRATION[] PROGMEM_I1 = ISTR("PINDA cal."); ////MSG_PINDA_CALIBRATION c=13
 const char MSG_PINDA_CALIBRATION_DONE[] PROGMEM_I1 = ISTR("PINDA calibration is finished and active. It can be disabled in menu Settings->PINDA cal."); ////MSG_PINDA_CALIBRATION_DONE c=20 r=8
-const char MSG_UNLOAD_FILAMENT[] PROGMEM_I1 = ISTR("Unload filament"); ////MSG_UNLOAD_FILAMENT c=16
+const char MSG_UNLOAD_FILAMENT[] PROGMEM_I1 = ISTR("Unload filament"); ////MSG_UNLOAD_FILAMENT c=18
 const char MSG_UNLOADING_FILAMENT[] PROGMEM_I1 = ISTR("Unloading filament"); ////MSG_UNLOADING_FILAMENT c=20
 const char MSG_INFO_SCREEN[] PROGMEM_I1 = ISTR("Info screen"); ////MSG_INFO_SCREEN c=18
 const char MSG_WIZARD_CALIBRATION_FAILED[] PROGMEM_I1 = ISTR("Please check our handbook and fix the problem. Then resume the Wizard by rebooting the printer."); ////MSG_WIZARD_CALIBRATION_FAILED c=20 r=8
@@ -138,14 +149,15 @@ const char MSG_NONE[] PROGMEM_I1 = ISTR("None"); ////MSG_NONE c=8
 const char MSG_WARN[] PROGMEM_I1 = ISTR("Warn"); ////MSG_WARN c=8
 const char MSG_STRICT[] PROGMEM_I1 = ISTR("Strict"); ////MSG_STRICT c=8
 const char MSG_MODEL[] PROGMEM_I1 = ISTR("Model"); ////MSG_MODEL c=8
-const char MSG_GCODE_DIFF_PRINTER_CONTINUE[] PROGMEM_I1 = ISTR("G-code sliced for a different printer type. Continue?"); ////MSG_GCODE_DIFF_PRINTER_CONTINUE c=20 r=3
-const char MSG_GCODE_DIFF_PRINTER_CANCELLED[] PROGMEM_I1 =ISTR("G-code sliced for a different printer type. Please re-slice the model again. Print cancelled."); ////MSG_GCODE_DIFF_PRINTER_CANCELLED c=20 r=8
-const char MSG_GCODE_NEWER_FIRMWARE_CONTINUE[] PROGMEM_I1 = ISTR("G-code sliced for a newer firmware. Continue?"); ////MSG_GCODE_NEWER_FIRMWARE_CONTINUE c=20 r=3
-const char MSG_GCODE_NEWER_FIRMWARE_CANCELLED[] PROGMEM_I1 = ISTR("G-code sliced for a newer firmware. Please update the firmware. Print cancelled."); ////MSG_GCODE_NEWER_FIRMWARE_CANCELLED c=20 r=8
-const char MSG_GCODE_DIFF_CONTINUE[] PROGMEM_I1 = ISTR("G-code sliced for a different level. Continue?"); ////MSG_GCODE_DIFF_CONTINUE c=20 r=3
-const char MSG_GCODE_DIFF_CANCELLED[] PROGMEM_I1 = ISTR("G-code sliced for a different level. Please re-slice the model again. Print cancelled."); ////MSG_GCODE_DIFF_CANCELLED c=20 r=8
-const char MSG_NOZZLE_DIFFERS_CONTINUE[] PROGMEM_I1 = ISTR("Nozzle diameter differs from the G-code. Continue?"); ////MSG_NOZZLE_DIFFERS_CONTINUE c=20 r=3
-const char MSG_NOZZLE_DIFFERS_CANCELLED[] PROGMEM_I1 = ISTR("Nozzle diameter differs from the G-code. Please check the value in settings. Print cancelled."); ////MSG_NOZZLE_DIFFERS_CANCELLED c=20 r=8
+const char MSG_GCODE_DIFF_PRINTER_CONTINUE[] PROGMEM_I1 = ISTR("G-code sliced for a different printer type."); ////MSG_GCODE_DIFF_PRINTER_CONTINUE c=20 r=3
+const char MSG_GCODE_DIFF_PRINTER_CANCELLED[] PROGMEM_I1 =ISTR("G-code sliced for a different printer type. Please re-slice the model again."); ////MSG_GCODE_DIFF_PRINTER_CANCELLED c=20 r=8
+const char MSG_GCODE_NEWER_FIRMWARE_CONTINUE[] PROGMEM_I1 = ISTR("G-code sliced for a newer firmware."); ////MSG_GCODE_NEWER_FIRMWARE_CONTINUE c=20 r=3
+const char MSG_GCODE_NEWER_FIRMWARE_CANCELLED[] PROGMEM_I1 = ISTR("G-code sliced for a newer firmware. Please update the firmware."); ////MSG_GCODE_NEWER_FIRMWARE_CANCELLED c=20 r=8
+const char MSG_GCODE_DIFF_CONTINUE[] PROGMEM_I1 = ISTR("G-code sliced for a different level."); ////MSG_GCODE_DIFF_CONTINUE c=20 r=3
+const char MSG_GCODE_DIFF_CANCELLED[] PROGMEM_I1 = ISTR("G-code sliced for a different level. Please re-slice the model again."); ////MSG_GCODE_DIFF_CANCELLED c=20 r=8
+const char MSG_MISSING_FILAMENT[] PROGMEM_I1 = ISTR("There is no filament loaded."); ////MSG_MISSING_FILAMENT c=20 r=3
+const char MSG_NOZZLE_DIFFERS_CONTINUE[] PROGMEM_I1 = ISTR("Nozzle diameter differs from the G-code."); ////MSG_NOZZLE_DIFFERS_CONTINUE c=20 r=3
+const char MSG_NOZZLE_DIFFERS_CANCELLED[] PROGMEM_I1 = ISTR("Nozzle diameter differs from the G-code. Please check the value in settings."); ////MSG_NOZZLE_DIFFERS_CANCELLED c=20 r=8
 const char MSG_NOZZLE_DIAMETER[] PROGMEM_I1 = ISTR("Nozzle d."); ////MSG_NOZZLE_DIAMETER c=10
 const char MSG_MMU_MODE[] PROGMEM_I1 = ISTR("MMU Mode"); ////MSG_MMU_MODE c=8
 const char MSG_SD_CARD[] PROGMEM_I1 = ISTR("SD card"); ////MSG_SD_CARD c=8
@@ -186,34 +198,203 @@ extern const char MSG_TM_ACK_ERROR[] PROGMEM_I1 = ISTR("Clear TM error");////MSG
 extern const char MSG_LOAD_ALL[] PROGMEM_I1 = ISTR("Load All"); ////MSG_LOAD_ALL c=18
 extern const char MSG_NOZZLE_CNG_MENU [] PROGMEM_I1 = ISTR("Nozzle change");////MSG_NOZZLE_CNG_MENU c=18
 extern const char MSG_NOZZLE_CNG_READ_HELP [] PROGMEM_I1 = ISTR("For a Nozzle change please read\nprusa.io/nozzle-mk3s");////MSG_NOZZLE_CNG_READ_HELP c=20 r=4
+#ifdef QUICK_NOZZLE_CHANGE
+extern const char MSG_NOZZLE_CNG_COOLDOWN [] PROGMEM_I1 = ISTR("Nozzle is hot! Wait for cooldown.");////MSG_NOZZLE_CNG_COOLDOWN c=20 r=3
+extern const char MSG_NOZZLE_CNG_CHANGED [] PROGMEM_I1 = ISTR("Nozzle changed?");////MSG_NOZZLE_CNG_CHANGED_QUICK c=20 r=3
+#else
 extern const char MSG_NOZZLE_CNG_CHANGED [] PROGMEM_I1 = ISTR("Hotend at 280C! Nozzle changed and tightened to specs?");////MSG_NOZZLE_CNG_CHANGED c=20 r=6
-
+#endif //QUICK_NOZZLE_CHANGE
+extern const char MSG_REPRINT [] PROGMEM_I1 = ISTR("Reprint"); ////MSG_REPRINT c=18
+extern const char MSG_FILE_CNT [] PROGMEM_I1 = ISTR("Some files will not be sorted. Max. No. of files in 1 folder for sorting is 100."); ////MSG_FILE_CNT c=20 r=6
+extern const char MSG_CHANGED_MOTHERBOARD [] PROGMEM_I1 = ISTR("Warning: motherboard type changed."); ////MSG_CHANGED_MOTHERBOARD c=20 r=4
+extern const char MSG_CHANGED_PRINTER [] PROGMEM_I1 = ISTR("Warning: printer type changed."); ////MSG_CHANGED_PRINTER c=20 r=4
+extern const char MSG_CHANGED_BOTH [] PROGMEM_I1 = ISTR("Warning: both printer type and motherboard type changed."); ////MSG_CHANGED_BOTH c=20 r=4
+extern const char MSG_DEFAULT_SETTINGS_LOADED [] PROGMEM_I1 = ISTR("Old settings found. Default PID, Esteps etc. will be set."); ////MSG_DEFAULT_SETTINGS_LOADED c=20 r=6
+extern const char MSG_FORCE_SELFTEST [] PROGMEM_I1 = ISTR("Selftest will be run to calibrate accurate sensorless rehoming."); ////MSG_FORCE_SELFTEST c=20 r=8
+extern const char MSG_MBL_FAILED [] PROGMEM_I1 = ISTR("Mesh bed leveling failed. Print canceled."); ////MSG_MBL_FAILED c=20 r=4
+extern const char MSG_ZLEVELING_ENFORCED [] PROGMEM_I1 = ISTR("Some problem encountered, Z-leveling enforced ..."); ////MSG_ZLEVELING_ENFORCED c=20 r=4
+extern const char MSG_UNLOAD_SUCCESSFUL [] PROGMEM_I1 = ISTR("Was filament unload successful?"); ////MSG_UNLOAD_SUCCESSFUL c=20 r=3
+extern const char MSG_CHECK_IDLER [] PROGMEM_I1 = ISTR("Please open idler and remove filament manually."); ////MSG_CHECK_IDLER c=20 r=4
+extern const char MSG_RUN_XYZ [] PROGMEM_I1 = ISTR("Please run XYZ calibration first."); ////MSG_RUN_XYZ c=20 r=4
+extern const char MSG_TEMP_CAL_WARNING [] PROGMEM_I1 = ISTR("Stable ambient temperature 21-26C is needed a rigid stand is required."); ////MSG_TEMP_CAL_WARNING c=20 r=4
+extern const char MSG_USERWAIT [] PROGMEM_I1 = ISTR("Wait for user..."); ////MSG_USERWAIT c=20
+extern const char MSG_NO_MOVE [] PROGMEM_I1 = ISTR("No move."); ////MSG_NO_MOVE c=20
+extern const char MSG_BED_HEATING_SAFETY_DISABLED [] PROGMEM_I1 = ISTR("Heating disabled by safety timer."); ////MSG_BED_HEATING_SAFETY_DISABLED c=20 r=4
+extern const char MSG_PRESS_TO_PREHEAT [] PROGMEM_I1 = ISTR("Press the knob to preheat nozzle and continue."); ////MSG_PRESS_TO_PREHEAT c=20 r=4
+extern const char MSG_IMPROVE_BED_OFFSET_AND_SKEW_LINE1 [] PROGMEM_I1 = ISTR("Improving bed calibration point"); ////MSG_IMPROVE_BED_OFFSET_AND_SKEW_LINE1 c=20 r=4
+extern const char MSG_MMU_RESTORE_TEMP [] PROGMEM_I1 = ISTR("MMU Retry: Restoring temperature..."); ////MSG_MMU_RESTORE_TEMP c=20 r=4
+extern const char MSG_MMU_SENSITIVITY [] PROGMEM_I1 = ISTR("Sensitivity"); ////MSG_MMU_SENSITIVITY c=18
+extern const char MSG_RECOVERING_PRINT [] PROGMEM_I1 = ISTR("Recovering print"); ////MSG_RECOVERING_PRINT c=20
+extern const char MSG_HOMEYZ_DONE [] PROGMEM_I1 = ISTR("Calibration done"); ////MSG_HOMEYZ_DONE c=20
+extern const char MSG_PINDA_PREHEAT [] PROGMEM_I1 = ISTR("PINDA Heating"); ////MSG_PINDA_PREHEAT c=20
+extern const char MSG_PID_RUNNING [] PROGMEM_I1 = ISTR("PID cal."); ////MSG_PID_RUNNING c=20
+extern const char MSG_PID_FINISHED [] PROGMEM_I1 = ISTR("PID cal. finished"); ////MSG_PID_FINISHED c=20
+extern const char MSG_AMBIENT [] PROGMEM_I1 = ISTR("Ambient"); ////MSG_AMBIENT c=14
+extern const char MSG_DATE [] PROGMEM_I1 = ISTR("Date:"); ////MSG_DATE c=17
+extern const char MSG_MMU_CONNECTED [] PROGMEM_I1 = ISTR("MMU connected"); ////MSG_MMU_CONNECTED c=18
+extern const char MSG_UNKNOWN [] PROGMEM_I1 = ISTR("unknown"); ////MSG_UNKNOWN c=13
+extern const char MSG_PRINTER_IP [] PROGMEM_I1 = ISTR("Printer IP Addr:"); ////MSG_PRINTER_IP c=18
+extern const char MSG_XYZ_DETAILS [] PROGMEM_I1 = ISTR("XYZ cal. details"); ////MSG_XYZ_DETAILS c=18
+extern const char MSG_INFO_EXTRUDER [] PROGMEM_I1 = ISTR("Extruder info"); ////MSG_INFO_EXTRUDER c=18
+extern const char MSG_INFO_SENSORS [] PROGMEM_I1 = ISTR("Sensor info"); ////MSG_INFO_SENSORS c=18
+extern const char MSG_MENU_TEMPERATURES [] PROGMEM_I1 = ISTR("Temperatures"); ////MSG_MENU_TEMPERATURES c=18
+extern const char MSG_MENU_VOLTAGES [] PROGMEM_I1 = ISTR("Voltages"); ////MSG_MENU_VOLTAGES c=18
+extern const char MSG_PRESS_KNOB [] PROGMEM_I1 = ISTR("Press the knob"); ////MSG_PRESS_KNOB c=20
+extern const char MSG_TO_LOAD_FIL [] PROGMEM_I1 = ISTR("to load filament"); ////MSG_TO_LOAD_FIL c=20
+extern const char MSG_TO_UNLOAD_FIL [] PROGMEM_I1 = ISTR("to unload filament"); ////MSG_TO_UNLOAD_FIL c=20
+extern const char MSG_PREHEATING_TO_LOAD [] PROGMEM_I1 = ISTR("Preheating to load"); ////MSG_PREHEATING_TO_LOAD c=20
+extern const char MSG_PREHEATING_TO_UNLOAD [] PROGMEM_I1 = ISTR("Preheating to unload"); ////MSG_PREHEATING_TO_UNLOAD c=20
+extern const char MSG_PREHEATING_TO_EJECT [] PROGMEM_I1 = ISTR("Preheating to eject"); ////MSG_PREHEATING_TO_EJECT c=20
+extern const char MSG_PREHEATING_TO_CUT [] PROGMEM_I1 = ISTR("Preheating to cut"); ////MSG_PREHEATING_TO_CUT c=20
+extern const char MSG_INSERT_FILAMENT [] PROGMEM_I1 = ISTR("Insert filament"); ////MSG_INSERT_FILAMENT c=20
+extern const char MSG_PRESS [] PROGMEM_I1 = ISTR("and press the knob"); ////MSG_PRESS c=20 r=2
+extern const char MSG_CHANGE_SUCCESS [] PROGMEM_I1 = ISTR("Change success!"); ////MSG_CHANGE_SUCCESS c=20
+extern const char MSG_LOADING_COLOR [] PROGMEM_I1 = ISTR("Loading color"); ////MSG_LOADING_COLOR c=20
+extern const char MSG_CORRECTLY [] PROGMEM_I1 = ISTR("Changed correctly"); ////MSG_CORRECTLY c=19
+extern const char MSG_NOT_LOADED [] PROGMEM_I1 = ISTR("Filament not loaded"); ////MSG_NOT_LOADED c=19
+extern const char MSG_NOT_COLOR [] PROGMEM_I1 = ISTR("Color not correct"); ////MSG_NOT_COLOR c=19
+#ifndef REMOVE_AUTOLOAD_FILAMENT_MENU_ENTRY
+extern const char MSG_AUTOLOADING_ENABLED [] PROGMEM_I1 = ISTR("Autoloading filament is active, just press the knob and insert filament..."); ////MSG_AUTOLOADING_ENABLED c=20 r=4
+#endif //REMOVE_AUTOLOAD_FILAMENT_MENU_ENTRY
+extern const char MSG_FILAMENT_USED [] PROGMEM_I1 = ISTR("Filament used"); ////MSG_FILAMENT_USED c=19
+extern const char MSG_PRINT_TIME [] PROGMEM_I1 = ISTR("Print time"); ////MSG_PRINT_TIME c=19
+extern const char MSG_TOTAL_FILAMENT [] PROGMEM_I1 = ISTR("Total filament"); ////MSG_TOTAL_FILAMENT c=19
+extern const char MSG_TOTAL_PRINT_TIME [] PROGMEM_I1 = ISTR("Total print time"); ////MSG_TOTAL_PRINT_TIME c=19
+extern const char MSG_Y_DIST_FROM_MIN [] PROGMEM_I1 = ISTR("Y distance from min"); ////MSG_Y_DIST_FROM_MIN c=20
+extern const char MSG_LEFT [] PROGMEM_I1 = ISTR("Left"); ////MSG_LEFT c=10
+extern const char MSG_RIGHT [] PROGMEM_I1 = ISTR("Right"); ////MSG_RIGHT c=10
+extern const char MSG_MEASURED_SKEW [] PROGMEM_I1 = ISTR("Measured skew"); ////MSG_MEASURED_SKEW c=14
+extern const char MSG_SLIGHT_SKEW [] PROGMEM_I1 = ISTR("Slight skew"); ////MSG_SLIGHT_SKEW c=14
+extern const char MSG_SEVERE_SKEW [] PROGMEM_I1 = ISTR("Severe skew"); ////MSG_SEVERE_SKEW c=14
+extern const char MSG_MEASURED_OFFSET [] PROGMEM_I1 = ISTR("[0;0] point offset"); ////MSG_MEASURED_OFFSET c=20
+extern const char MSG_BABYSTEPPING_Z [] PROGMEM_I1 = ISTR("Adjusting Z"); ////MSG_BABYSTEPPING_Z c=13
+extern const char MSG_BED_CORRECTION_LEFT [] PROGMEM_I1 = ISTR("Left side [\xe4m]"); ////MSG_BED_CORRECTION_LEFT c=14
+extern const char MSG_BED_CORRECTION_RIGHT [] PROGMEM_I1 = ISTR("Right side[\xe4m]"); ////MSG_BED_CORRECTION_RIGHT c=14
+extern const char MSG_BED_CORRECTION_FRONT [] PROGMEM_I1 = ISTR("Front side[\xe4m]"); ////MSG_BED_CORRECTION_FRONT c=14
+extern const char MSG_BED_CORRECTION_REAR [] PROGMEM_I1 = ISTR("Rear side [\xe4m]"); ////MSG_BED_CORRECTION_REAR c=14
+extern const char MSG_SET_TEMPERATURE [] PROGMEM_I1 = ISTR("Set temperature:"); ////MSG_SET_TEMPERATURE c=20
+extern const char MSG_WAITING_TEMP_PINDA [] PROGMEM_I1 = ISTR("Waiting for PINDA probe cooling"); ////MSG_WAITING_TEMP_PINDA c=20 r=3
+extern const char MSG_WAITING_TEMP [] PROGMEM_I1 = ISTR("Waiting for nozzle and bed cooling"); ////MSG_WAITING_TEMP c=20 r=4
+extern const char MSG_MOVE_CARRIAGE_TO_THE_TOP_Z [] PROGMEM_I1 = ISTR("Calibrating Z. Rotate the knob to move the Z carriage up to the end stoppers. Click when done."); ////MSG_MOVE_CARRIAGE_TO_THE_TOP_Z c=20 r=8
+extern const char MSG_MOVE_CARRIAGE_TO_THE_TOP [] PROGMEM_I1 = ISTR("Calibrating XYZ. Rotate the knob to move the Z carriage up to the end stoppers. Click when done."); ////MSG_MOVE_CARRIAGE_TO_THE_TOP c=20 r=8
+extern const char MSG_CONFIRM_CARRIAGE_AT_THE_TOP [] PROGMEM_I1 = ISTR("Are left and right Z-carriages all up?"); ////MSG_CONFIRM_CARRIAGE_AT_THE_TOP c=20 r=3
+extern const char MSG_BED_SKEW_OFFSET_DETECTION_POINT_NOT_FOUND [] PROGMEM_I1 = ISTR("XYZ calibration failed. Bed calibration point was not found."); ////MSG_BED_SKEW_OFFSET_DETECTION_POINT_NOT_FOUND c=20 r=6
+extern const char MSG_BED_SKEW_OFFSET_DETECTION_FAILED_FRONT_BOTH_FAR [] PROGMEM_I1 = ISTR("XYZ calibration failed. Front calibration points not reachable."); ////MSG_BED_SKEW_OFFSET_DETECTION_FAILED_FRONT_BOTH_FAR c=20 r=6
+extern const char MSG_BED_SKEW_OFFSET_DETECTION_FAILED_FRONT_RIGHT_FAR [] PROGMEM_I1 = ISTR("XYZ calibration failed. Right front calibration point not reachable."); ////MSG_BED_SKEW_OFFSET_DETECTION_FAILED_FRONT_RIGHT_FAR c=20 r=6
+extern const char MSG_BED_SKEW_OFFSET_DETECTION_WARNING_FRONT_BOTH_FAR [] PROGMEM_I1 = ISTR("XYZ calibration compromised. Front calibration points not reachable."); ////MSG_BED_SKEW_OFFSET_DETECTION_WARNING_FRONT_BOTH_FAR c=20 r=8
+extern const char MSG_BED_SKEW_OFFSET_DETECTION_WARNING_FRONT_RIGHT_FAR [] PROGMEM_I1 = ISTR("XYZ calibration compromised. Right front calibration point not reachable."); ////MSG_BED_SKEW_OFFSET_DETECTION_WARNING_FRONT_RIGHT_FAR c=20 r=8
+extern const char MSG_BED_SKEW_OFFSET_DETECTION_PERFECT [] PROGMEM_I1 = ISTR("XYZ calibration ok. X/Y axes are perpendicular. Congratulations!"); ////MSG_BED_SKEW_OFFSET_DETECTION_PERFECT c=20 r=8
+extern const char MSG_BED_SKEW_OFFSET_DETECTION_SKEW_MILD [] PROGMEM_I1 = ISTR("XYZ calibration all right. X/Y axes are slightly skewed. Good job!"); ////MSG_BED_SKEW_OFFSET_DETECTION_SKEW_MILD c=20 r=8
+extern const char MSG_BED_SKEW_OFFSET_DETECTION_SKEW_EXTREME [] PROGMEM_I1 = ISTR("XYZ calibration all right. Skew will be corrected automatically."); ////MSG_BED_SKEW_OFFSET_DETECTION_SKEW_EXTREME c=20 r=8
+extern const char MSG_PINDA_CAL_FAILED [] PROGMEM_I1 = ISTR("PINDA calibration failed"); ////MSG_PINDA_CAL_FAILED c=20 r=4
+extern const char MSG_MOVE_X [] PROGMEM_I1 = ISTR("Move X"); ////MSG_MOVE_X c=18
+extern const char MSG_MOVE_Y [] PROGMEM_I1 = ISTR("Move Y"); ////MSG_MOVE_Y c=18
+extern const char MSG_MOVE_Z [] PROGMEM_I1 = ISTR("Move Z"); ////MSG_MOVE_Z c=18
+extern const char MSG_CRASH_DET_ONLY_IN_NORMAL [] PROGMEM_I1 = ISTR("Crash detection can\nbe turned on only in\nNormal mode"); ////MSG_CRASH_DET_ONLY_IN_NORMAL c=20 r=4
+extern const char MSG_CRASH_DET_STEALTH_FORCE_OFF [] PROGMEM_I1 = ISTR("WARNING:\nCrash detection\ndisabled in\nStealth mode"); ////MSG_CRASH_DET_STEALTH_FORCE_OFF c=20 r=4
+extern const char MSG_MODE_CHANGE_IN_PROGRESS [] PROGMEM_I1 = ISTR("Mode change in progress..."); ////MSG_MODE_CHANGE_IN_PROGRESS c=20 r=3
+extern const char MSG_COPY_SEL_LANG [] PROGMEM_I1 = ISTR("Copy selected language?"); ////MSG_COPY_SEL_LANG c=20 r=3
+extern const char MSG_SHEET_OFFSET [] PROGMEM_I1 = ISTR("Sheet %.7s\nZ offset: %+1.3fmm\n%cContinue\n%cReset"); ////MSG_SHEET_OFFSET c=20 r=4
+extern const char MSG_PLEASE_LOAD_PLA [] PROGMEM_I1 = ISTR("Please load filament first."); ////MSG_PLEASE_LOAD_PLA c=20 r=4
+extern const char MSG_WIZARD_RERUN [] PROGMEM_I1 = ISTR("Running Wizard will delete current calibration results and start from the beginning."); ////MSG_WIZARD_RERUN c=20 r=7
+extern const char MSG_MMU_INSERT_FILAMENT_FIRST_TUBE [] PROGMEM_I1 = ISTR("Please insert filament into the first tube of the MMU, then press the knob to load it."); ////MSG_MMU_INSERT_FILAMENT_FIRST_TUBE c=20 r=6
+extern const char MSG_WIZARD_LOAD_FILAMENT [] PROGMEM_I1 = ISTR("Please insert filament into the extruder, then press the knob to load it."); ////MSG_WIZARD_LOAD_FILAMENT c=20 r=6
+extern const char MSG_WIZARD_V2_CAL [] PROGMEM_I1 = ISTR("Now I will calibrate distance between tip of the nozzle and heatbed surface."); ////MSG_WIZARD_V2_CAL c=20 r=8
+extern const char MSG_SELECT_FIL_1ST_LAYERCAL [] PROGMEM_I1 = ISTR("Select a filament for the First Layer Calibration and select it in the on-screen menu."); ////MSG_SELECT_FIL_1ST_LAYERCAL c=20 r=7
+extern const char MSG_SELECT_TEMP_MATCHES_MATERIAL [] PROGMEM_I1 = ISTR("Select temperature which matches your material."); ////MSG_SELECT_TEMP_MATCHES_MATERIAL c=20 r=4
+extern const char MSG_WIZARD_V2_CAL_2 [] PROGMEM_I1 = ISTR("The printer will start printing a zig-zag line. Rotate the knob until you reach the optimal height. Check the pictures in the handbook (Calibration chapter)."); ////MSG_WIZARD_V2_CAL_2 c=20 r=12
+extern const char MSG_WIZARD_SELFTEST [] PROGMEM_I1 = ISTR("First, I will run the selftest to check most common assembly problems."); ////MSG_WIZARD_SELFTEST c=20 r=8
+extern const char MSG_WIZARD_XYZ_CAL [] PROGMEM_I1 = ISTR("I will run xyz calibration now. It will take up to 24 mins."); ////MSG_WIZARD_XYZ_CAL c=20 r=8
+extern const char MSG_REMOVE_SHIPPING_HELPERS [] PROGMEM_I1 = ISTR("Please remove shipping helpers first."); ////MSG_REMOVE_SHIPPING_HELPERS c=20 r=3
+extern const char MSG_REMOVE_TEST_PRINT [] PROGMEM_I1 = ISTR("Now remove the test print from steel sheet."); ////MSG_REMOVE_TEST_PRINT c=20 r=4
+extern const char MSG_WIZARD_Z_CAL [] PROGMEM_I1 = ISTR("I will run z calibration now."); ////MSG_WIZARD_Z_CAL c=20 r=8
+extern const char MSG_WIZARD_WILL_PREHEAT [] PROGMEM_I1 = ISTR("Now I will preheat nozzle for PLA."); ////MSG_WIZARD_WILL_PREHEAT c=20 r=4
+extern const char MSG_TM_CAL [] PROGMEM_I1 = ISTR("Thermal model cal. takes approx. 12 mins. See\nprusa.io/tm-cal"); ////MSG_TM_CAL c=20 r=4
+extern const char MSG_SEL_PREHEAT_TEMP [] PROGMEM_I1 = ISTR("Select nozzle preheat temperature which matches your material."); ////MSG_SEL_PREHEAT_TEMP c=20 r=6
+extern const char MSG_WIZARD_REPEAT_V2_CAL [] PROGMEM_I1 = ISTR("Do you want to repeat last step to readjust distance between nozzle and heatbed?"); ////MSG_WIZARD_REPEAT_V2_CAL c=20 r=7
+extern const char MSG_WIZARD_CLEAN_HEATBED [] PROGMEM_I1 = ISTR("Please clean heatbed and then press the knob."); ////MSG_WIZARD_CLEAN_HEATBED c=20 r=8
+extern const char MSG_ADDITIONAL_SHEETS [] PROGMEM_I1 = ISTR("If you have additional steel sheets, calibrate their presets in Settings - HW Setup - Steel sheets."); ////MSG_ADDITIONAL_SHEETS c=20 r=8
+extern const char MSG_X_CORRECTION [] PROGMEM_I1 = ISTR("X-correct"); ////MSG_X_CORRECTION c=13
+extern const char MSG_Y_CORRECTION [] PROGMEM_I1 = ISTR("Y-correct"); ////MSG_Y_CORRECTION c=13
+extern const char MSG_Z_CORRECTION [] PROGMEM_I1 = ISTR("Z-correct"); ////MSG_Z_CORRECTION c=13
+extern const char MSG_EXTRUDER_CORRECTION [] PROGMEM_I1 = ISTR("E-correct"); ////MSG_EXTRUDER_CORRECTION c=13
+extern const char MSG_CHECKS [] PROGMEM_I1 = ISTR("Checks"); ////MSG_CHECKS c=18
+extern const char MSG_TEMPERATURE [] PROGMEM_I1 = ISTR("Temperature"); ////MSG_TEMPERATURE c=18
+extern const char MSG_MOVE_AXIS [] PROGMEM_I1 = ISTR("Move axis"); ////MSG_MOVE_AXIS c=18
+extern const char MSG_DISABLE_STEPPERS [] PROGMEM_I1 = ISTR("Disable steppers"); ////MSG_DISABLE_STEPPERS c=18
+extern const char MSG_LIN_CORRECTION [] PROGMEM_I1 = ISTR("Lin. correction"); ////MSG_LIN_CORRECTION c=18
+extern const char MSG_WIZARD [] PROGMEM_I1 = ISTR("Wizard"); ////MSG_WIZARD c=17
+extern const char MSG_BELTTEST [] PROGMEM_I1 = ISTR("Belt test"); ////MSG_BELTTEST c=18
+extern const char MSG_SELFTEST [] PROGMEM_I1 = ISTR("Selftest"); ////MSG_SELFTEST c=18
+extern const char MSG_CALIBRATE_BED [] PROGMEM_I1 = ISTR("Calibrate XYZ"); ////MSG_CALIBRATE_BED c=18
+extern const char MSG_BED_CORRECTION_MENU [] PROGMEM_I1 = ISTR("Bed level correct"); ////MSG_BED_CORRECTION_MENU c=18
+extern const char MSG_PID_EXTRUDER [] PROGMEM_I1 = ISTR("PID calibration"); ////MSG_PID_EXTRUDER c=17
+extern const char MSG_SHOW_END_STOPS [] PROGMEM_I1 = ISTR("Show end stops"); ////MSG_SHOW_END_STOPS c=18
+extern const char MSG_CALIBRATE_BED_RESET [] PROGMEM_I1 = ISTR("Reset XYZ calibr."); ////MSG_CALIBRATE_BED_RESET c=18
+extern const char MSG_SELECT [] PROGMEM_I1 = ISTR("Select"); ////MSG_SELECT c=18
+extern const char MSG_RENAME [] PROGMEM_I1 = ISTR("Rename"); ////MSG_RENAME c=18
+extern const char MSG_PREHEAT [] PROGMEM_I1 = ISTR("Preheat"); ////MSG_PREHEAT c=18
+extern const char MSG_CNG_SDCARD [] PROGMEM_I1 = ISTR("Change SD card"); ////MSG_CNG_SDCARD c=18
+extern const char MSG_NO_CARD [] PROGMEM_I1 = ISTR("No SD card"); ////MSG_NO_CARD c=18
+extern const char MSG_INIT_SDCARD [] PROGMEM_I1 = ISTR("Init. SD card"); ////MSG_INIT_SDCARD c=18
+extern const char MSG_LOAD_TO_NOZZLE [] PROGMEM_I1 = ISTR("Load to nozzle"); ////MSG_LOAD_TO_NOZZLE c=18
+extern const char MSG_AUTOLOAD_FILAMENT [] PROGMEM_I1 = ISTR("AutoLoad filament"); ////MSG_AUTOLOAD_FILAMENT c=18
+extern const char MSG_STATISTICS [] PROGMEM_I1 = ISTR("Statistics"); ////MSG_STATISTICS c=18
+extern const char MSG_FAIL_STATS [] PROGMEM_I1 = ISTR("Fail stats"); ////MSG_FAIL_STATS c=18
+extern const char MSG_MMU_FAIL_STATS [] PROGMEM_I1 = ISTR("Fail stats MMU"); ////MSG_MMU_FAIL_STATS c=18
+extern const char MSG_SUPPORT [] PROGMEM_I1 = ISTR("Support"); ////MSG_SUPPORT c=18
+extern const char MSG_SPEED [] PROGMEM_I1 = ISTR("Speed"); ////MSG_SPEED c=15
+extern const char MSG_FLOW [] PROGMEM_I1 = ISTR("Flow"); ////MSG_FLOW c=15
+extern const char MSG_INSERT_FIL [] PROGMEM_I1 = ISTR("Insert the filament (do not load it) into the extruder and then press the knob."); ////MSG_INSERT_FIL c=20 r=6
+extern const char MSG_UNLOAD_FILAMENT_REPEAT [] PROGMEM_I1 = ISTR("Please unload the filament first, then repeat this action."); ////MSG_UNLOAD_FILAMENT_REPEAT c=20 r=4
+extern const char MSG_CHECK_IR_CONNECTION [] PROGMEM_I1 = ISTR("Please check the IR sensor connection, unload filament if present."); ////MSG_CHECK_IR_CONNECTION c=20 r=4
+extern const char MSG_FS_VERIFIED [] PROGMEM_I1 = ISTR("Sensor verified, remove the filament now."); ////MSG_FS_VERIFIED c=20 r=3
+extern const char MSG_FIL_FAILED [] PROGMEM_I1 = ISTR("Verification failed, remove the filament and try again."); ////MSG_FIL_FAILED c=20 r=4
+extern const char MSG_SELFTEST_START [] PROGMEM_I1 = ISTR("Selftest start"); ////MSG_SELFTEST_START c=20
+extern const char MSG_SELFTEST_OK [] PROGMEM_I1 = ISTR("Selftest OK"); ////MSG_SELFTEST_OK c=20
+extern const char MSG_SELFTEST_ERROR [] PROGMEM_I1 = ISTR("Selftest error!"); ////MSG_SELFTEST_ERROR c=20
+extern const char MSG_SELFTEST_PLEASECHECK [] PROGMEM_I1 = ISTR("Please check:"); ////MSG_SELFTEST_PLEASECHECK c=20
+extern const char MSG_SELFTEST_HEATERTHERMISTOR [] PROGMEM_I1 = ISTR("Heater/Thermistor"); ////MSG_SELFTEST_HEATERTHERMISTOR c=20
+extern const char MSG_SELFTEST_NOTCONNECTED [] PROGMEM_I1 = ISTR("Not connected"); ////MSG_SELFTEST_NOTCONNECTED c=20
+extern const char MSG_SELFTEST_BEDHEATER [] PROGMEM_I1 = ISTR("Bed/Heater"); ////MSG_SELFTEST_BEDHEATER c=20
+extern const char MSG_SELFTEST_ENDSTOPS [] PROGMEM_I1 = ISTR("Endstops"); ////MSG_SELFTEST_ENDSTOPS c=20
+extern const char MSG_SELFTEST_ENDSTOP [] PROGMEM_I1 = ISTR("Endstop"); ////MSG_SELFTEST_ENDSTOP c=16
+extern const char MSG_SELFTEST_ENDSTOP_NOTHIT [] PROGMEM_I1 = ISTR("Endstop not hit"); ////MSG_SELFTEST_ENDSTOP_NOTHIT c=20
+extern const char MSG_LOOSE_PULLEY [] PROGMEM_I1 = ISTR("Loose pulley"); ////MSG_LOOSE_PULLEY c=20
+extern const char MSG_SELFTEST_AXIS_LENGTH [] PROGMEM_I1 = ISTR("Axis length"); ////MSG_SELFTEST_AXIS_LENGTH c=20
+extern const char MSG_SELFTEST_AXIS [] PROGMEM_I1 = ISTR("Axis"); ////MSG_SELFTEST_AXIS c=16
+extern const char MSG_SELFTEST_FANS [] PROGMEM_I1 = ISTR("Front/left fans"); ////MSG_SELFTEST_FANS c=20
+extern const char MSG_SELFTEST_SWAPPED [] PROGMEM_I1 = ISTR("Swapped"); ////MSG_SELFTEST_SWAPPED c=16
+extern const char MSG_FALSE_TRIGGERING [] PROGMEM_I1 = ISTR("False triggering"); ////MSG_FALSE_TRIGGERING c=20
+extern const char MSG_SELFTEST_FS_LEVEL [] PROGMEM_I1 = ISTR("%s level expected"); ////MSG_SELFTEST_FS_LEVEL c=20
+extern const char MSG_SELFTEST_CHECK_ENDSTOPS [] PROGMEM_I1 = ISTR("Checking endstops"); ////MSG_SELFTEST_CHECK_ENDSTOPS c=20
+extern const char MSG_SELFTEST_CHECK_Z [] PROGMEM_I1 = ISTR("Checking Z axis"); ////MSG_SELFTEST_CHECK_Z c=20
+extern const char MSG_SELFTEST_CHECK_HOTEND [] PROGMEM_I1 = ISTR("Checking hotend"); ////MSG_SELFTEST_CHECK_HOTEND c=20
+extern const char MSG_SELFTEST_CHECK_ALLCORRECT [] PROGMEM_I1 = ISTR("All correct"); ////MSG_SELFTEST_CHECK_ALLCORRECT c=20
+extern const char MSG_CALIBRATING_HOME [] PROGMEM_I1 = ISTR("Calibrating home"); ////MSG_CALIBRATING_HOME c=20
+extern const char MSG_CHECKING_FILE [] PROGMEM_I1 = ISTR("Checking file"); ////MSG_CHECKING_FILE c=17
+extern const char MSG_FILE_INCOMPLETE [] PROGMEM_I1 = ISTR("File incomplete."); ////MSG_FILE_INCOMPLETE c=20 r=3
+extern const char MSG_SD_REMOVED [] PROGMEM_I1 = ISTR("Card removed"); ////MSG_SD_REMOVED c=20
+extern const char MSG_NEW_FIRMWARE_AVAILABLE [] PROGMEM_I1 = ISTR("New firmware version available:"); ////MSG_NEW_FIRMWARE_AVAILABLE c=20 r=2
+extern const char MSG_NEW_FIRMWARE_PLEASE_UPGRADE [] PROGMEM_I1 = ISTR("Please upgrade."); ////MSG_NEW_FIRMWARE_PLEASE_UPGRADE c=20
+extern const char MSG_FW_MK3_DETECTED [] PROGMEM_I1 = ISTR(PRINTER_NAME " firmware detected on " PRINTER_NAME_ALTERNATE " printer"); ////MSG_FW_MK3_DETECTED c=20 r=4
 //not internationalized messages
-#if 0
-const char MSG_FW_VERSION_BETA[] PROGMEM_N1 = "You are using a BETA firmware version! It is in a development state! Use this version with CAUTION as it may DAMAGE the printer!"; ////MSG_FW_VERSION_BETA c=20 r=8
-#endif
 const char MSG_SPOOL_JOIN[] PROGMEM_N1 = "SpoolJoin"; ////MSG_SPOOL_JOIN c=13
 const char MSG_FIRMWARE[] PROGMEM_N1 = "Firmware"; ////MSG_FIRMWARE c=8
+const char MSG_FILAMENT[] PROGMEM_N1 = "Filament"; ////MSG_FILAMENT c=8
 const char MSG_TOSHIBA_FLASH_AIR_COMPATIBILITY[] PROGMEM_N1 = "FlashAir"; ////MSG_TOSHIBA_FLASH_AIR_COMPATIBILITY c=8
 const char MSG_PINDA[] PROGMEM_N1 = "PINDA"; ////MSG_PINDA c=5
 const char MSG_WELCOME[] PROGMEM_N1 = WELCOME_MSG;
-const char MSG_SD_WORKDIR_FAIL[] PROGMEM_N1 = "workDir open failed"; ////
 const char MSG_BROWNOUT_RESET[] PROGMEM_N1 = " Brown out Reset"; ////
 const char MSG_EXTERNAL_RESET[] PROGMEM_N1 = " External Reset"; ////
 const char MSG_FILE_SAVED[] PROGMEM_N1 = "Done saving file."; ////
-const char MSG_POSITION_UNKNOWN[] PROGMEM_N1 = "Home X/Y before Z"; ////
 const char MSG_SOFTWARE_RESET[] PROGMEM_N1 = " Software Reset"; ////
 const char MSG_UNKNOWN_COMMAND[] PROGMEM_N1 = "Unknown command: \""; ////
 const char MSG_WATCHDOG_RESET[] PROGMEM_N1 = " Watchdog Reset"; ////
 const char MSG_Z_MAX[] PROGMEM_N1 = "z_max: "; ////
 const char MSG_Z_MIN[] PROGMEM_N1 = "z_min: "; ////
-const char MSG_ZPROBE_OUT[] PROGMEM_N1 = "Z probe out. bed"; ////
-#ifdef ENABLE_AUTO_BED_LEVELING
-const char MSG_ZPROBE_ZOFFSET[] PROGMEM_N1 = "Z Offset"; ////
-#endif
 const char MSG_TMC_OVERTEMP[] PROGMEM_N1 = "TMC DRIVER OVERTEMP"; ////
 const char MSG_Enqueing[] PROGMEM_N1 = "enqueing \""; ////
-const char MSG_ENDSTOPS_HIT[] PROGMEM_N1 = "endstops hit: "; ////
 const char MSG_SD_ERR_WRITE_TO_FILE[] PROGMEM_N1 = "error writing to file"; ////
 const char MSG_OK[] PROGMEM_N1 = "ok"; ////
 const char MSG_OK_CAPS[] PROGMEM_N1 = "OK"; ////
@@ -222,11 +403,20 @@ const char MSG_ENDSTOP_OPEN[] PROGMEM_N1 = "open"; ////
 const char MSG_POWERUP[] PROGMEM_N1 = "PowerUp"; ////
 const char MSG_ERR_STOPPED[] PROGMEM_N1 = "Printer stopped due to errors. Supervision required."; ////
 const char MSG_ENDSTOP_HIT[] PROGMEM_N1 = "TRIGGERED"; ////
-const char MSG_OCTOPRINT_ASK_PAUSE[] PROGMEM_N1 = "// action:pause"; ////
-const char MSG_OCTOPRINT_PAUSED[] PROGMEM_N1 = "// action:paused"; ////
-const char MSG_OCTOPRINT_ASK_RESUME[] PROGMEM_N1 = "// action:resume"; ////
-const char MSG_OCTOPRINT_RESUMED[] PROGMEM_N1 = "// action:resumed"; ////
-const char MSG_OCTOPRINT_CANCEL[] PROGMEM_N1 = "// action:cancel"; ////
+const char MSG_HOST_ACTION_ASK_PAUSE[] PROGMEM_N1 = "//action:pause"; ////
+const char MSG_HOST_ACTION_PAUSED[] PROGMEM_N1 = "//action:paused"; ////
+const char MSG_HOST_ACTION_ASK_RESUME[] PROGMEM_N1 = "//action:resume"; ////
+const char MSG_HOST_ACTION_RESUMED[] PROGMEM_N1 = "//action:resumed"; ////
+const char MSG_HOST_ACTION_CANCEL[] PROGMEM_N1 = "//action:cancel"; ////
+const char MSG_HOST_ACTION_READY[] PROGMEM_N1 = "//action:ready"; ////
+const char MSG_HOST_ACTION_NOT_READY[] PROGMEM_N1 = "//action:not_ready"; ////
+const char MSG_HOST_ACTION_START[] PROGMEM_N1 = "//action:start"; ////
+const char MSG_HOST_ACTION_UVLO_RECOVERY_READY[] PROGMEM_N1 = "//action:uvlo_recovery_ready"; ////
+const char MSG_HOST_ACTION_UVLO_AUTO_RECOVERY_READY[] PROGMEM_N1 = "//action:uvlo_auto_recovery_ready"; ////
+const char MSG_HOST_ACTION_NOTIFICATION[] PROGMEM_N1 = "//action:notification %S\n"; ////
+#ifdef HOST_SHUTDOWN
+const char MSG_HOST_ACTION_SHUTDOWN[] PROGMEM_N1 = "//action:shutdown"; ////
+#endif //HOST_SHUTOWN
 const char MSG_FANCHECK_HOTEND[] PROGMEM_N1 = "Err:HOTEND FAN ERROR"; ////c=20
 const char MSG_FANCHECK_PRINT[] PROGMEM_N1 = "Err:PRINT FAN ERROR"; ////c=20
 const char MSG_M112_KILL[] PROGMEM_N1 = "M112 called. Emergency Stop."; ////c=20
@@ -234,10 +424,13 @@ const char MSG_ADVANCE_K[] PROGMEM_N1 = "Advance K:"; ////c=13
 const char MSG_POWERPANIC_DETECTED[] PROGMEM_N1 = "POWER PANIC DETECTED"; ////c=20
 const char MSG_LCD_STATUS_CHANGED[] PROGMEM_N1 = "LCD status changed";
 const char MSG_UNKNOWN_CODE[] PROGMEM_N1 = "Unknown %c code: %s\n";
+const char MSG_FILAMENT_RUNOUT_DETECTED[] PROGMEM_N1 = "Filament runout detected!"; ////c=20 r=2
 
 // Common G-gcodes
 const char G1_E_F2700[] PROGMEM_N1 = "G1 E%-.3f F2700";
 const char G28W[] PROGMEM_N1 = "G28 W";
+const char MSG_G90[] PROGMEM_N1 = "G90";
+const char MSG_G91[] PROGMEM_N1 = "G91";
 const char MSG_M23[] PROGMEM_N1 = "M23 %s";
 const char MSG_M24[] PROGMEM_N1 = "M24";
 const char MSG_M83[] PROGMEM_N1 = "M83";

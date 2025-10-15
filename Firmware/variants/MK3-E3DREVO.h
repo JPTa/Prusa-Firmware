@@ -23,6 +23,7 @@
 // Electronics
 #define MOTHERBOARD BOARD_EINSY_1_0a
 #define STEEL_SHEET
+//#define NEW_FIRST_LAYER_CAL //from front to back
 #define HAS_SECOND_SERIAL_PORT
 
 
@@ -63,6 +64,9 @@
 #define Y_MIN_POS -4 //orig -4
 #define Z_MAX_POS 210
 #define Z_MIN_POS 0.15
+
+// Z height correction value
+#define Z_MAX_POS_XYZ_CALIBRATION_CORRECTION 2
 
 // Canceled home position
 #define X_CANCEL_POS 50
@@ -109,13 +113,13 @@
 #define NORMAL_MAX_FEEDRATE_XY   200  // max feedrate in mm/s
 
 //number of bytes from end of the file to start check
-#define END_FILE_SECTION 20000
+#define END_FILE_SECTION 30720
 
 #define Z_AXIS_ALWAYS_ON 1
 
 //Crash detection
 #define CRASHDET_TIMER 45 //seconds
-#define CRASHDET_COUNTER_MAX 3 
+#define CRASHDET_COUNTER_MAX 3
 
 // New XYZ calibration
 #define NEW_XYZCAL
@@ -147,7 +151,7 @@
 #define FILAMENT_SENSOR_TYPE FSENSOR_PAT9125
 #define FSENSOR_PROBING
 
-// Backlash - 
+// Backlash -
 //#define BACKLASH_X
 //#define BACKLASH_Y
 
@@ -164,7 +168,9 @@
 #define DEBUG_DCODE6
 
 //#define DEBUG_PULLUP_CRASH //Test Pullup crash
+//#define DEBUG_PRINTER_STATES
 
+//#define DEBUG_EEPROM_CHANGES //Uses +1188 bytes Flash +6 bytes SRAM
 //#define DEBUG_BUILD
 //#define DEBUG_SEC_LANG   //secondary language debug output at startup
 //#define DEBUG_XFLASH   //debug external spi flash
@@ -173,15 +179,15 @@
 #define DEBUG_DCODES //D codes
 #define DEBUG_STACK_MONITOR        //Stack monitor in stepper ISR
 //#define DEBUG_CRASHDET_COUNTERS  //Display crash-detection counters on LCD
-//#define DEBUG_RESUME_PRINT       //Resume/save print debug enable 
-//#define DEBUG_UVLO_AUTOMATIC_RECOVER // Power panic automatic recovery debug output 
+//#define DEBUG_RESUME_PRINT       //Resume/save print debug enable
+//#define DEBUG_UVLO_AUTOMATIC_RECOVER // Power panic automatic recovery debug output
 //#define DEBUG_DISABLE_XMINLIMIT  //x min limit ignored
 //#define DEBUG_DISABLE_XMAXLIMIT  //x max limit ignored
 //#define DEBUG_DISABLE_YMINLIMIT  //y min limit ignored
 //#define DEBUG_DISABLE_YMAXLIMIT  //y max limit ignored
 //#define DEBUG_DISABLE_ZMINLIMIT  //z min limit ignored
 //#define DEBUG_DISABLE_ZMAXLIMIT  //z max limit ignored
-#define DEBUG_DISABLE_STARTMSGS //no startup messages 
+#define DEBUG_DISABLE_STARTMSGS //no startup messages
 //#define DEBUG_DISABLE_MINTEMP   //mintemp error ignored
 //#define DEBUG_DISABLE_SWLIMITS  //sw limits ignored
 //#define DEBUG_DISABLE_LCD_STATUS_LINE  //empty four lcd line
@@ -317,7 +323,7 @@
 #define HEATER_0_MAXTEMP 305
 #endif
 #define BED_MAXTEMP 125
-#define AMBIENT_MAXTEMP 100
+#define AMBIENT_MAXTEMP 80
 
 #if defined(E3D_PT100_EXTRUDER_WITH_AMP) || defined(E3D_PT100_EXTRUDER_NO_AMP)
 // Define PID constants for extruder with PT100
@@ -333,6 +339,9 @@
 
 // Extrude mintemp
 #define EXTRUDE_MINTEMP 175
+
+// Quick nozzle change supported
+#define QUICK_NOZZLE_CHANGE
 
 // Extruder cooling fans
 #define EXTRUDER_0_AUTO_FAN_PIN   8
@@ -356,16 +365,25 @@
 #define FILAMENTCHANGE_FINALRETRACT 0
 
 #define FILAMENTCHANGE_FIRSTFEED 70 //E distance in mm for fast filament loading sequence used used in filament change (M600)
-#define FILAMENTCHANGE_FINALFEED 25 //E distance in mm for slow filament loading sequence used used in filament change (M600) and filament load (M701) 
+#define FILAMENTCHANGE_FINALFEED 25 //E distance in mm for slow filament loading sequence used used in filament change (M600) and filament load (M701)
 #define FILAMENTCHANGE_RECFEED 5
 
 #define FILAMENTCHANGE_XYFEED 50
 #define FILAMENTCHANGE_EFEED_FIRST 20 // feedrate in mm/s for fast filament loading sequence used in filament change (M600)
-#define FILAMENTCHANGE_EFEED_FINAL 3.3f // feedrate in mm/s for slow filament loading sequence used in filament change (M600) and filament load (M701) 
+#define FILAMENTCHANGE_EFEED_FINAL 3.3f // feedrate in mm/s for slow filament loading sequence used in filament change (M600) and filament load (M701)
 //#define FILAMENTCHANGE_RFEED 400
 #define FILAMENTCHANGE_RFEED 7000 / 60
 #define FILAMENTCHANGE_EXFEED 2
 #define FILAMENTCHANGE_ZFEED 15
+
+//Retract and then extrude some filament to prevent oozing.
+//After the loading sequence and after a print is canceled, the filament is retracted to get it out of the heat zone of the nozzle.
+//Then a small extrusion is performed to make sure the filament is close enough for the next print without oozing.
+//#define COMMUNITY_PREVENT_OOZE
+#ifdef COMMUNITY_PREVENT_OOZE
+#define FILAMENTCHANGE_COMMUNITY_ROOZEFEED -10 //E retract distance in mm for ooze prevention
+#define FILAMENTCHANGE_COMMUNITY_EOOZEFEED 4 //E extrude distance in mm for ooze prevention
+#endif //End COMMUNITY_PREVENT_OOZE
 
 #endif
 
@@ -402,6 +420,17 @@
 #include "thermal_model/e3d_REVO.h"
 #define THERMAL_MODEL_DEFAULT E3D_REVO // Default E3D REVO model parameters
 
+/*------------------------------------
+ HOST FEATURES
+ *------------------------------------*/
+
+// Uncomment if the host supports '//action:shutdown'. It will add "Shutdown host" to the LCD meun. 
+//#define HOST_SHUTDOWN
+
+// Uncomment if the host doesn't support '//action:ready' & '//action:notready'.
+// This will replace the "Set Ready"/"Set not Ready" LCD menu entry with
+// "Print from host" and send '//action:start' instead.
+//#define REPLACE_SETREADY
 
 /*------------------------------------
  MOTOR CURRENT SETTINGS
@@ -452,9 +481,9 @@
 //
 //#define BED_LIMIT_SWITCHING
 
-// This sets the max power delivered to the bed, and replaces the HEATER_BED_DUTY_CYCLE_DIVIDER option.
+// This sets the max power delivered to the bed.
 // all forms of bed control obey this (PID, bang-bang, bang-bang with hysteresis)
-// setting this to anything other than 255 enables a form of PWM to the bed just like HEATER_BED_DUTY_CYCLE_DIVIDER did,
+// setting this to anything other than 255 enables a form of PWM to the bed,
 // so you shouldn't use it unless you are OK with PWM on your bed.  (see the comment on enabling PIDTEMPBED)
 #define MAX_BED_POWER 255 // limits duty cycle to bed; 255=full current
 
@@ -626,7 +655,7 @@
 // "dropsegments" steps long. All the above rules still need to apply.
 #define UVLO_TINY_Z_AXIS_SHIFT 0.16
 // If power panic occured, and the current temperature is higher then target temperature before interrupt minus this offset, print will be recovered automatically.
-#define AUTOMATIC_UVLO_BED_TEMP_OFFSET 5 
+#define AUTOMATIC_UVLO_BED_TEMP_OFFSET 5
 
 #define HEATBED_V2
 
@@ -657,5 +686,15 @@
        calculated segment length is used. */
 #define DEFAULT_MIN_ARC_SEGMENTS 20 // The enforced minimum segments in a full circle of the same radius.  Set to 0 to disable
 #define DEFAULT_ARC_SEGMENTS_PER_SEC 0 // Use feedrate to choose segment length. Set to 0 to disable
+
+/*------------------------------------
+ COMMUNITY FEATURES
+ *------------------------------------*/
+
+//Show filename instead of print time after SD card print finished
+//#define SHOW_FILENAME_AFTER_FINISH
+
+//Remove the "AutoLoad filament" LCD menu entry if autoload is enabled.
+//#define REMOVE_AUTOLOAD_FILAMENT_MENU_ENTRY
 
 #endif //__CONFIGURATION_PRUSA_H

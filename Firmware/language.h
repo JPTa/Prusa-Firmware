@@ -13,14 +13,6 @@
 
 #define PROTOCOL_VERSION "1.0"
 
-#ifndef CUSTOM_MENDEL_NAME
-    #define MACHINE_NAME "Mendel"
-#endif
-
-#ifndef MACHINE_UUID
-   #define MACHINE_UUID "00000000-0000-0000-0000-000000000000"
-#endif
-
 #if (LANG_MODE == 0) //primary language only
 #define PROGMEM_I2 __attribute__((section(".progmem0")))
 #define PROGMEM_I1 __attribute__((section(".progmem1")))
@@ -51,7 +43,7 @@
 /** @brief lang_table_header_t structure - (size= 16byte) */
 typedef struct
 {
-	uint32_t magic;      //+0 
+	uint32_t magic;      //+0
 	uint16_t size;       //+4
 	uint16_t count;      //+6
 	uint16_t checksum;   //+8

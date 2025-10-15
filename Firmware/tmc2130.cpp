@@ -30,18 +30,25 @@ static constexpr uint8_t default_dedge_bit = 0;
 
 //mode
 uint8_t tmc2130_mode = TMC2130_MODE_NORMAL;
-uint8_t tmc2130_current_h[4] = TMC2130_CURRENTS_H;
-//running currents
-uint8_t tmc2130_current_r[4] = TMC2130_CURRENTS_R;
 
+static constexpr uint8_t tmc2130_default_current_h[4] = TMC2130_CURRENTS_H;
+//running currents
+static constexpr uint8_t tmc2130_default_current_r[4] = TMC2130_CURRENTS_R;
 //running currents for homing
-static uint8_t tmc2130_current_r_home[4] = TMC2130_CURRENTS_R_HOME;
+static constexpr uint8_t tmc2130_current_r_home[4] = TMC2130_CURRENTS_R_HOME;
+
+static constexpr MotorCurrents homing_currents_P[NUM_AXIS] PROGMEM = {
+	MotorCurrents(tmc2130_current_r_home[0], tmc2130_current_r_home[0]),
+	MotorCurrents(tmc2130_current_r_home[1], tmc2130_current_r_home[1]),
+	MotorCurrents(tmc2130_current_r_home[2], tmc2130_current_r_home[2]),
+	MotorCurrents(tmc2130_current_r_home[3], tmc2130_current_r_home[3])
+};
 
 MotorCurrents currents[NUM_AXIS] = {
-	MotorCurrents(tmc2130_current_r[0], tmc2130_current_h[0]),
-	MotorCurrents(tmc2130_current_r[1], tmc2130_current_h[1]),
-	MotorCurrents(tmc2130_current_r[2], tmc2130_current_h[2]),
-	MotorCurrents(tmc2130_current_r[3], tmc2130_current_h[3])
+	MotorCurrents(tmc2130_default_current_r[0], tmc2130_default_current_h[0]),
+	MotorCurrents(tmc2130_default_current_r[1], tmc2130_default_current_h[1]),
+	MotorCurrents(tmc2130_default_current_r[2], tmc2130_default_current_h[2]),
+	MotorCurrents(tmc2130_default_current_r[3], tmc2130_default_current_h[3])
 };
 
 union ChopConfU {
@@ -51,7 +58,7 @@ union ChopConfU {
 		uint32_t hend : 4;     // HEND hysteresis low value (chm = 0) or OFFSET sine wave offset (chm = 1)
 		uint32_t fd : 1;
 		uint32_t disfdcc : 1;  // Fast decay mode
-		uint32_t rndtf : 1;    // Random TOFF time 
+		uint32_t rndtf : 1;    // Random TOFF time
 		uint32_t chm : 1;      // Chopper mode
 		uint32_t tbl : 2;      // Blank time select
 		uint32_t vsense : 1;   // Sense resistor voltage based current scaling
@@ -315,7 +322,7 @@ void tmc2130_init(TMCInitParams params)
 	SET_OUTPUT(Y_TMC2130_CS);
 	SET_OUTPUT(Z_TMC2130_CS);
 	SET_OUTPUT(E0_TMC2130_CS);
-	
+
 	SET_INPUT(X_TMC2130_DIAG);
 	SET_INPUT(Y_TMC2130_DIAG);
 	SET_INPUT(Z_TMC2130_DIAG);
@@ -324,7 +331,7 @@ void tmc2130_init(TMCInitParams params)
 	WRITE(Y_TMC2130_DIAG,HIGH);
 	WRITE(Z_TMC2130_DIAG,HIGH);
 	WRITE(E0_TMC2130_DIAG,HIGH);
-	
+
 	for (uint_least8_t axis = 0; axis < E_AXIS; axis++) // X Y Z axes
 	{
 		tmc2130_XYZ_reg_init(axis);
@@ -390,6 +397,9 @@ void tmc2130_st_isr()
 	}
 }
 
+void crashdet_use_eeprom_setting() {
+	tmc2130_sg_stop_on_crash = eeprom_read_byte((uint8_t*)EEPROM_CRASH_DET);
+}
 
 bool tmc2130_update_sg()
 {
@@ -419,8 +429,8 @@ void tmc2130_home_enter(uint8_t axes_mask)
 			tmc2130_wr(axis, TMC2130_REG_GCONF, TMC2130_GCONF_NORMAL);
 			tmc2130_wr(axis, TMC2130_REG_COOLCONF, (((uint32_t)tmc2130_sg_thr_home[axis]) << 16));
 			tmc2130_wr(axis, TMC2130_REG_TCOOLTHRS, __tcoolthrs(axis));
-			currents[axis].setiRun(tmc2130_current_r_home[axis]);
-			tmc2130_setup_chopper(axis, tmc2130_mres[axis]);
+			MotorCurrents curr(homing_currents_P[axis]);
+			tmc2130_setup_chopper(axis, tmc2130_mres[axis], &curr);
 			tmc2130_wr(axis, TMC2130_REG_GCONF, TMC2130_GCONF_SGSENS); //stallguard output DIAG1, DIAG1 = pushpull
 		}
 	}
@@ -516,17 +526,12 @@ static constexpr bool getIntpolBit([[maybe_unused]]const uint8_t axis, const uin
     return (mres != 0); // intpol to 256 only if microsteps aren't 256
 }
 
-static void SetCurrents(const uint8_t axis) {
-    uint8_t iHold = currents[axis].getiHold();
-    const uint8_t iRun = currents[axis].getiRun();
+static void SetCurrents(const uint8_t axis, const MotorCurrents &curr) {
+    uint8_t iHold = curr.getiHold();
+    const uint8_t iRun = curr.getiRun();
 
     // Make sure iHold never exceeds iRun at runtime
-    if (iHold > iRun) {
-        iHold = iRun;
-
-        // Update global array such that M913 reports correct values
-        currents[axis].setiHold(iRun);
-
+    if (curr.iHoldIsClamped()) {
         // Let user know firmware modified the value
         SERIAL_ECHO_START;
         SERIAL_ECHOLNRPGM(_n("Hold current truncated to Run current"));
@@ -548,11 +553,13 @@ static void SetCurrents(const uint8_t axis) {
     };
 
     IHoldRun ihold_irun(iHold, iRun);
-
+#ifdef DEBUG_TMC_CURRENTS
+	printf_P(PSTR("SetCurrents(axis=%u, iHold=%u, iRun=%u, vsense=%u, reg=%08lX)\n"), axis, iHold, iRun, curr.getvSense(), ihold_irun.dw);
+#endif //DEBUG_TMC_CURRENTS
     tmc2130_wr(axis, TMC2130_REG_IHOLD_IRUN, ihold_irun.dw);
 }
 
-void tmc2130_setup_chopper(uint8_t axis, uint8_t mres)
+void tmc2130_setup_chopper(uint8_t axis, uint8_t mres, const MotorCurrents *curr /* = nullptr */)
 {
 	// Initialise the chopper configuration
 	ChopConfU chopconf = ChopConfU(currents[axis].getvSense(), mres);
@@ -564,30 +571,19 @@ void tmc2130_setup_chopper(uint8_t axis, uint8_t mres)
 	chopconf.s.tbl = tmc2130_chopper_config[axis].tbl; //blanking time, original value = 2
 
 	tmc2130_wr(axis, TMC2130_REG_CHOPCONF, chopconf.dw);
-	SetCurrents(axis);
-}
-
-void tmc2130_set_current_h(uint8_t axis, uint8_t current)
-{
-//	DBG(_n("tmc2130_set_current_h(axis=%d, current=%d\n"), axis, current);
-	currents[axis].setiHold(current);
-	tmc2130_setup_chopper(axis, tmc2130_mres[axis]);
-}
-
-void tmc2130_set_current_r(uint8_t axis, uint8_t current)
-{
-//	DBG(_n("tmc2130_set_current_r(axis=%d, current=%d\n"), axis, current);
-	currents[axis].setiRun(current);
-	tmc2130_setup_chopper(axis, tmc2130_mres[axis]);
+	if (curr == nullptr) {
+		curr = &currents[axis];
+	}
+	SetCurrents(axis, *curr);
 }
 
 void tmc2130_print_currents()
 {
 	printf_P(_n("tmc2130_print_currents()\n\tH\tR\nX\t%d\t%d\nY\t%d\t%d\nZ\t%d\t%d\nE\t%d\t%d\n"),
-		currents[0].getiHold(), currents[0].getiRun(),
-		currents[1].getiHold(), currents[1].getiRun(),
-		currents[2].getiHold(), currents[2].getiRun(),
-		currents[3].getiHold(), currents[3].getiRun()
+		currents[0].getOriginaliHold(), currents[0].getOriginaliRun(),
+		currents[1].getOriginaliHold(), currents[1].getOriginaliRun(),
+		currents[2].getOriginaliHold(), currents[2].getOriginaliRun(),
+		currents[3].getOriginaliHold(), currents[3].getOriginaliRun()
 	);
 }
 
@@ -1036,8 +1032,8 @@ bool tmc2130_home_calibrate(uint8_t axis)
 	bubblesort_uint8(cnt, cl, val);
 	tmc2130_home_origin[axis] = val[cl-1];
 	printf_P(PSTR("result value: %d\n"), tmc2130_home_origin[axis]);
-	if (axis == X_AXIS) eeprom_update_byte((uint8_t*)EEPROM_TMC2130_HOME_X_ORIGIN, tmc2130_home_origin[X_AXIS]);
-	else if (axis == Y_AXIS) eeprom_update_byte((uint8_t*)EEPROM_TMC2130_HOME_Y_ORIGIN, tmc2130_home_origin[Y_AXIS]);
+	if (axis == X_AXIS) eeprom_update_byte_notify((uint8_t*)EEPROM_TMC2130_HOME_X_ORIGIN, tmc2130_home_origin[X_AXIS]);
+	else if (axis == Y_AXIS) eeprom_update_byte_notify((uint8_t*)EEPROM_TMC2130_HOME_Y_ORIGIN, tmc2130_home_origin[Y_AXIS]);
 	return true;
 }
 
