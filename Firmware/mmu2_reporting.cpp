@@ -1,4 +1,5 @@
 #include <avr/pgmspace.h>
+#include "eeprom.h"
 #include "mmu2.h"
 #include "mmu2_log.h"
 #include "mmu2_reporting.h"
@@ -10,6 +11,7 @@
 #include "ultralcd.h"
 #include "Filament_sensor.h"
 #include "language.h"
+#include "lcd.h"
 #include "temperature.h"
 #include "sound.h"
 
@@ -156,7 +158,7 @@ static uint8_t ReportErrorHookMonitor(uint8_t ei) {
         //! |                    |
         //! |>(left)             |
         //! ----------------------
-        //! Three choices 
+        //! Three choices
         //! |>(left)>(mid)>(righ)|
         //! ----------------------
         //! Two choices
@@ -221,8 +223,12 @@ static bool is_mmu_error_monitor_active;
 // Set to false to allow the error screen to render again.
 static bool putErrorScreenToSleep;
 
-bool isErrorScreenRunning() {
-    return is_mmu_error_monitor_active;
+void CheckErrorScreenUserInput() {
+    if (is_mmu_error_monitor_active) {
+        // Call this every iteration to keep the knob rotation responsive
+        // This includes when mmu_loop is called within manage_response
+        ReportErrorHook((CommandInProgress)mmu2.GetCommandInProgress(), mmu2.GetLastErrorCode(), mmu2.MMULastErrorSource());
+    }
 }
 
 bool TuneMenuEntered() {
@@ -231,7 +237,7 @@ bool TuneMenuEntered() {
 
 void ReportErrorHook(CommandInProgress /*cip*/, ErrorCode ec, uint8_t /*es*/) {
     if (putErrorScreenToSleep) return;
-    
+
     if (mmu2.MMUCurrentErrorCode() == ErrorCode::OK && mmu2.MMULastErrorSource() == MMU2::ErrorSourceMMU) {
         // If the error code suddenly changes to OK, that means
         // a button was pushed on the MMU and the LCD should
@@ -243,6 +249,7 @@ void ReportErrorHook(CommandInProgress /*cip*/, ErrorCode ec, uint8_t /*es*/) {
 
     switch ((uint8_t)ReportErrorHookState) {
     case (uint8_t)ReportErrorHookStates::RENDER_ERROR_SCREEN:
+        KEEPALIVE_STATE(PAUSED_FOR_USER);
         ReportErrorHookStaticRender(ei);
         ReportErrorHookState = ReportErrorHookStates::MONITOR_SELECTION;
         [[fallthrough]];
@@ -265,6 +272,7 @@ void ReportErrorHook(CommandInProgress /*cip*/, ErrorCode ec, uint8_t /*es*/) {
                 sound_wait_for_user_reset();
                 // Reset the state in case a new error is reported
                 is_mmu_error_monitor_active = false;
+                KEEPALIVE_STATE(IN_HANDLER);
                 ReportErrorHookState = ReportErrorHookStates::RENDER_ERROR_SCREEN;
                 break;
             default:
@@ -278,6 +286,7 @@ void ReportErrorHook(CommandInProgress /*cip*/, ErrorCode ec, uint8_t /*es*/) {
         sound_wait_for_user_reset();
         // Reset the state in case a new error is reported
         is_mmu_error_monitor_active = false;
+        KEEPALIVE_STATE(IN_HANDLER);
         ReportErrorHookState = ReportErrorHookStates::RENDER_ERROR_SCREEN;
         break;
     default:
@@ -336,6 +345,12 @@ void TryLoadUnloadReporter::DumpToSerial(){
     MMU2_ECHO_MSGLN(buf);
 }
 
+/// Disables MMU in EEPROM
+void DisableMMUInSettings() {
+    eeprom_update_byte_notify((uint8_t *)EEPROM_MMU_ENABLED, false);
+    mmu2.Status();
+}
+
 void IncrementLoadFails(){
     eeprom_increment_byte((uint8_t *)EEPROM_MMU_LOAD_FAIL);
     eeprom_increment_word((uint16_t *)EEPROM_MMU_LOAD_FAIL_TOT);
@@ -379,7 +394,7 @@ void FullScreenMsgLoad(uint8_t slot){
 }
 
 void FullScreenMsgRestoringTemperature(){
-    lcd_display_message_fullscreen_P(_i("MMU Retry: Restoring temperature...")); ////MSG_MMU_RESTORE_TEMP c=20 r=4
+    lcd_display_message_fullscreen_P(_T(MSG_MMU_RESTORE_TEMP));
 }
 
 void ScreenUpdateEnable(){
@@ -398,7 +413,7 @@ struct TuneItem {
 
 static const TuneItem TuneItems[] PROGMEM = {
   { (uint8_t)Register::Selector_sg_thrs_R, 1, 4},
-  { (uint8_t)Register::Idler_sg_thrs_R, 4, 7},
+  { (uint8_t)Register::Idler_sg_thrs_R, 2, 10},
 };
 
 static_assert(sizeof(TuneItems)/sizeof(TuneItem) == 2);
@@ -441,7 +456,7 @@ void tuneIdlerStallguardThresholdMenu() {
     );
     MENU_ITEM_BACK_P(_T(MSG_DONE));
     MENU_ITEM_EDIT_int3_P(
-        _i("Sensitivity"), ////MSG_MMU_SENSITIVITY c=18
+        _T(MSG_MMU_SENSITIVITY),
         &_md->currentValue,
         _md->item.minValue,
         _md->item.maxValue
@@ -450,6 +465,15 @@ void tuneIdlerStallguardThresholdMenu() {
 }
 
 void tuneIdlerStallguardThreshold() {
+    if ((CommandInProgress)mmu2.GetCommandInProgress() != NoCommand)
+    {
+        // Workaround to mitigate an issue where the Tune menu doesn't
+        // work if the MMU is running a command. For example the Idler
+        // homing fails during toolchange.
+        // To save the print, make the Tune button unresponsive for now.
+        return;
+    }
+
     putErrorScreenToSleep = true;
     menu_submenu(tuneIdlerStallguardThresholdMenu);
 }

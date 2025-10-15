@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <string.h>
 
 extern const uint16_t FW_VERSION_NR[4];
 const char* FW_VERSION_STR_P();
@@ -32,7 +33,9 @@ enum class ClPrintChecking:uint_least8_t
     _Model=2,
     _Smodel=3,
     _Version=4,
-    _Gcode=5
+    _Gcode=5,
+    _Features=6,
+    _PrinterState=7
 };
 
 enum class ClNozzleDiameter:uint_least8_t
@@ -52,30 +55,6 @@ enum class ClCheckMode:uint_least8_t
     _Undef=EEPROM_EMPTY_VALUE
 };
 
-enum class ClCheckModel:uint_least8_t
-{
-    _None,
-    _Warn,
-    _Strict,
-    _Undef=EEPROM_EMPTY_VALUE
-};
-
-enum class ClCheckVersion:uint_least8_t
-{
-    _None,
-    _Warn,
-    _Strict,
-    _Undef=EEPROM_EMPTY_VALUE
-};
-
-enum class ClCheckGcode:uint_least8_t
-{
-    _None,
-    _Warn,
-    _Strict,
-    _Undef=EEPROM_EMPTY_VALUE
-};
-
 #define COMPARE_VALUE_EQUAL (((uint8_t)ClCompareValue::_Equal<<6)+((uint8_t)ClCompareValue::_Equal<<4)+((uint8_t)ClCompareValue::_Equal<<2)+((uint8_t)ClCompareValue::_Equal))
 enum class ClCompareValue:uint_least8_t
 {
@@ -84,11 +63,52 @@ enum class ClCompareValue:uint_least8_t
     _Greater=2
 };
 
+struct unquoted_string {
+public:
+    /// @brief Given a pointer to a quoted string, filter out the quotes
+    /// @param pStr A constant pointer to a constant string to be searched/filtered. Modifying the pointer is strictly forbidden.
+    /// NOTE: Forcing inline saves ~36 bytes of flash
+    inline __attribute__((always_inline)) unquoted_string(const char * const pStr)
+    : len(0)
+    , found(false)
+    {
+        const char * pStrEnd = NULL;
+
+        // Start of the string
+        this->ptr = strchr(pStr, '"');
+        if (!this->ptr) {
+            // First quote not found
+            return;
+        }
+
+        // Skip the leading quote
+        this->ptr++;
+
+        // End of the string
+        pStrEnd = strchr(this->ptr, '"');
+        if(!pStrEnd) {
+            // Second quote not found
+            return;
+        }
+        this->len = pStrEnd - this->ptr;
+        this->found = true;
+    }
+
+    bool WasFound() { return found; }
+    uint8_t GetLength() { return len; }
+    const char * GetUnquotedString() { return ptr; }
+private:
+    const char * ptr = NULL;
+    uint8_t len;
+    bool found;
+};
+
 extern ClNozzleDiameter oNozzleDiameter;
 extern ClCheckMode oCheckMode;
-extern ClCheckModel oCheckModel;
-extern ClCheckVersion oCheckVersion;
-extern ClCheckGcode oCheckGcode;
+extern ClCheckMode oCheckModel;
+extern ClCheckMode oCheckVersion;
+extern ClCheckMode oCheckGcode;
+extern ClCheckMode oCheckFilament;
 
 void fCheckModeInit();
 void nozzle_diameter_check(uint16_t nDiameter);
@@ -96,6 +116,20 @@ void printer_model_check(uint16_t nPrinterModel, uint16_t actualPrinterModel);
 void printer_smodel_check(const char *pStrPos, const char *actualPrinterSModel);
 void fw_version_check(const char *pVersion);
 void gcode_level_check(uint16_t nGcodeLevel);
+
+/// Check if the filament is present before starting a print job.
+/// Depending on the check level set in the menus the printer will:
+///   - None: not issue any warning about missing filament
+///   - Warning (default): The user is warned about missing filament
+///     and is prompted to continue with Yes/No. If No is selected,
+///     the print is aborted. If no user input is given (e.g. from
+///     host printing) then the warning will expire in 30 seconds and
+///     the printer assumes the Yes option was selected.
+///   - Strict: If the filament is not detected when a print is started,
+///     it is immediately canceled with a message saying the filament is
+///     missing.
+/// @returns false if the print is canceled, true otherwise
+bool filament_presence_check();
 
 uint16_t nPrinterType(bool bMMu);
 const char *sPrinterType(bool bMMu);

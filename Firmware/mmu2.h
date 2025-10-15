@@ -11,6 +11,7 @@ typedef float feedRate_t;
 #else
     #include "protocol_logic.h"
     #include <atomic>
+    #include <memory>
 #endif
 
 struct E_Step;
@@ -32,6 +33,7 @@ struct Version {
 class MMU2 {
 public:
     MMU2();
+    ~MMU2();
 
     /// Powers ON the MMU, then initializes the UART and protocol logic
     void Start();
@@ -39,23 +41,26 @@ public:
     /// Stops the protocol logic, closes the UART, powers OFF the MMU
     void Stop();
 
+    /// Serial output of MMU state
+    void Status();
+
     inline xState State() const { return state; }
 
     inline bool Enabled() const { return State() == xState::Active; }
 
     /// Different levels of resetting the MMU
     enum ResetForm : uint8_t {
-        Software = 0,     ///< sends a X0 command into the MMU, the MMU will watchdog-reset itself
-        ResetPin = 1,     ///< trigger the reset pin of the MMU
-        CutThePower = 2,  ///< power off and power on (that includes +5V and +24V power lines)
+        Software = 0, ///< sends a X0 command into the MMU, the MMU will watchdog-reset itself
+        ResetPin = 1, ///< trigger the reset pin of the MMU
+        CutThePower = 2, ///< power off and power on (that includes +5V and +24V power lines)
         EraseEEPROM = 42, ///< erase MMU EEPROM and then perform a software reset
     };
 
     /// Saved print state on error.
     enum SavedState : uint8_t {
-        None = 0,         // No state saved.
+        None = 0, // No state saved.
         ParkExtruder = 1, // The extruder was parked.
-        Cooldown = 2,     // The extruder was allowed to cool.
+        Cooldown = 2, // The extruder was allowed to cool.
         CooldownPending = 4,
     };
 
@@ -160,8 +165,14 @@ public:
     /// @returns Current error code
     inline ErrorCode MMUCurrentErrorCode() const { return logic.Error(); }
 
+    /// @returns Command in progress
+    inline uint8_t GetCommandInProgress() const { return logic.CommandInProgress(); }
+
     /// @returns Last error source
     inline ErrorSource MMULastErrorSource() const { return lastErrorSource; }
+
+    /// @returns Last error code
+    inline ErrorCode GetLastErrorCode() const { return lastErrorCode; }
 
     /// @returns the version of the connected MMU FW.
     /// In the future we'll return the trully detected FW version
@@ -198,9 +209,9 @@ public:
     };
     inline void InvokeErrorScreen(ErrorCode ec) {
         // The printer may not raise an error when the MMU is busy
-        if (!logic.CommandInProgress()                // MMU must not be busy
+        if (!logic.CommandInProgress() // MMU must not be busy
             && MMUCurrentErrorCode() == ErrorCode::OK // The protocol must not be in error state
-            && lastErrorCode != ec)                   // The error code is not a duplicate
+            && lastErrorCode != ec) // The error code is not a duplicate
         {
             ReportError(ec, ErrorSource::ErrorSourcePrinter);
         }
@@ -264,7 +275,9 @@ private:
     StepStatus LogicStep(bool reportErrors);
 
     void filament_ramming();
-    void execute_extruder_sequence(const E_Step *sequence, uint8_t steps);
+
+    void execute_extruder_sequence(const E_Step *sequence, uint8_t stepCount);
+
     void execute_load_to_nozzle_sequence();
 
     /// Reports an error into attached ExtUIs
@@ -331,8 +344,11 @@ private:
     void UnloadInner();
     void CutFilamentInner(uint8_t slot);
 
-    ProtocolLogic logic;          ///< implementation of the protocol logic layer
-    uint8_t extruder;             ///< currently active slot in the MMU ... somewhat... not sure where to get it from yet
+    void SetCurrentTool(uint8_t ex);
+
+    ProtocolLogic logic; ///< implementation of the protocol logic layer
+
+    uint8_t extruder; ///< currently active slot in the MMU ... somewhat... not sure where to get it from yet
     uint8_t tool_change_extruder; ///< only used for UI purposes
 
     pos3d resume_position;

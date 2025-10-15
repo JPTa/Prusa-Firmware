@@ -7,6 +7,8 @@
 #include "meatpack.h"
 #include "messages.h"
 #include "language.h"
+#include "stopwatch.h"
+#include "power_panic.h"
 
 // Reserve BUFSIZE lines of length MAX_CMD_SIZE plus CMDBUFFER_RESERVE_FRONT.
 char cmdbuffer[BUFSIZE * (MAX_CMD_SIZE + 1) + CMDBUFFER_RESERVE_FRONT];
@@ -106,7 +108,7 @@ void cmdqueue_reset()
 	//commands are removed from command queue after process_command() function is finished
 	//reseting command queue and enqueing new commands during some (usually long running) command processing would cause that new commands are immediately removed from queue (or damaged)
 	//this will ensure that all new commands which are enqueued after cmdqueue reset, will be always executed
-	cmdbuffer_front_already_processed = true; 
+	cmdbuffer_front_already_processed = true;
 }
 
 // How long a string could be pushed to the front of the command queue?
@@ -352,7 +354,7 @@ void enquecommand_front(const char *cmd, bool from_progmem)
 void repeatcommand_front()
 {
     cmdbuffer_front_already_processed = true;
-} 
+}
 
 void get_command()
 {
@@ -366,8 +368,8 @@ void get_command()
 	}
 
   // start of serial line processing loop
-  while (((MYSERIAL.available() > 0 && !saved_printing) || (MYSERIAL.available() > 0 && isPrintPaused)) && !cmdqueue_serial_disabled) {  //is print is saved (crash detection or filament detection), dont process data from serial line
-	
+  while (((MYSERIAL.available() > 0 && !saved_printing) || (MYSERIAL.available() > 0 && printingIsPaused())) && !cmdqueue_serial_disabled) {  //is print is saved (crash detection or filament detection), dont process data from serial line
+
 #ifdef ENABLE_MEATPACK
     // MeatPack Changes
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -479,9 +481,11 @@ void get_command()
             allow_when_stopped = true;
 
         // Handle the USB timer
-        if ((*cmd_start == 'G') && !(IS_SD_PRINTING))
+        if ((*cmd_start == 'G') && (GetPrinterState() != PrinterState::IsSDPrinting)) {
             usb_timer.start();
-
+            SetPrinterState(PrinterState::IsHostPrinting); //set printer state busy printing to hide LCD menu while USB printing
+            eeprom_update_byte_notify((uint8_t*)EEPROM_UVLO, PowerPanic::NO_PENDING_RECOVERY);
+        }
         if (allow_when_stopped == false && Stopped == true) {
             // Stopped can be set either during error states (thermal error: cannot continue), or
             // when a printer-initiated action is processed. In such case the printer will send to
@@ -592,9 +596,9 @@ void get_command()
       {
         // This is either an empty line, or a line with just a comment.
         // Continue to the following line, and continue accumulating the number of bytes
-        // read from the sdcard into sd_count, 
+        // read from the sdcard into sd_count,
         // so that the length of the already read empty lines and comments will be added
-        // to the following non-empty line. 
+        // to the following non-empty line.
         return; // prevent cycling indefinitely - let manage_heaters do their job
       }
       // The new command buffer could be updated non-atomically, because it is not yet considered
@@ -631,7 +635,7 @@ void get_command()
 
       comment_mode = false; //for new command
       serial_count = 0; //clear buffer
-    
+
       if(card.eof()) break;
 
       // The following line will reserve buffer space if available.
@@ -658,16 +662,17 @@ void get_command()
 
           SERIAL_PROTOCOLLNRPGM(_n("Done printing file"));////MSG_FILE_PRINTED
           char time[30];
-          uint32_t t = (_millis() - starttime - pause_time) / 60000;
-          pause_time = 0;
+          uint32_t t = print_job_timer.duration() / 60;
           int hours, minutes;
           minutes = t % 60;
           hours = t / 60;
-          save_statistics(total_filament_used, t);
+          save_statistics();
           sprintf_P(time, PSTR("%i hours %i minutes"),hours, minutes);
           SERIAL_ECHO_START;
           SERIAL_ECHOLN(time);
+#ifndef SHOW_FILENAME_AFTER_FINISH
           lcd_setstatus(time);
+#endif //SHOW_FILENAME_AFTER_FINISH
           card.printingHasFinished();
           card.checkautostart(true);
 

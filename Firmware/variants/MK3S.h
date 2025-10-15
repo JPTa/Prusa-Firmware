@@ -11,17 +11,18 @@
 #define PRINTER_TYPE PRINTER_MK3S
 #define PRINTER_NAME PRINTER_MK3S_NAME
 #define PRINTER_NAME_ALTERNATE PRINTER_MK3_NAME //the other similar printer to this.
-#define PRINTER_MMU_TYPE PRINTER_MK3S_MMU2
-#define PRINTER_MMU_NAME PRINTER_MK3S_MMU2_NAME
+#define PRINTER_MMU_TYPE PRINTER_MK3S_MMU3
+#define PRINTER_MMU_NAME PRINTER_MK3S_MMU3_NAME
 #define FILAMENT_SIZE "1_75mm_MK3S"
 #define NOZZLE_TYPE "E3Dv6full"
 
 // Printer name
-#define CUSTOM_MENDEL_NAME "JTa BearExxa+" //Kuo can put your own printer name here
+#define CUSTOM_MENDEL_NAME "Bunny MK3S" //Kuo can put your own printer name here
 
 // Electronics
 #define MOTHERBOARD BOARD_EINSY_1_0a
 #define STEEL_SHEET
+#define NEW_FIRST_LAYER_CAL //from front to back
 #define HAS_SECOND_SERIAL_PORT
 #define HAS_OLED_SCREEN
 
@@ -30,7 +31,7 @@
 
 
 // Uncomment the below for the E3D PT100 temperature sensor (with or without PT100 Amplifier)
-#define E3D_PT100_EXTRUDER_WITH_AMP
+//#define E3D_PT100_EXTRUDER_WITH_AMP
 //#define E3D_PT100_EXTRUDER_NO_AMP
 //#define E3D_PT100_BED_WITH_AMP
 //#define E3D_PT100_BED_NO_AMP
@@ -87,7 +88,7 @@
 //Reversion back from geared extruder requires sending M92 E280 & M500 to printer
 //
 //#define SKELESTRUDER // Uncomment if you have a skelestruder. Applies the patches for load distances and Z height.
-#define BEAR_EXXA // Uncomment if you have Bear Exxa. Sets load distances and Z height.
+//#define BEAR_EXXA // Uncomment if you have Bear Exxa. Sets load distances and Z height.
 //#define BONDTECH_PRUSA_UPGRADE_MK3 //Kuo Uncomment for Bondtech MK3 extruder upgrade. 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define BONDTECH_PRUSA_UPGRADE_MK3S //Kuo Uncomment for Bondtech MK3S extruder upgrade. (Note the S!!!!) 3:1 extruder. This also sets Z_MAX_POS 205.
 //#define EXTRUDER_GEARRATIO_30 //Kuo Uncomment for extruder with gear ratio 3.0. 
@@ -97,12 +98,9 @@
 //====== Kuo E3D Volcano Support
 //#define E3D_VOLCANO //uncomment to adjust Z_MAX_POS to accomodate 8.5 mm greater Volcano extruder height
 
-//======= JTa E3D V7 support
-//#define E3D_V7
-
-//====== Kuo Slice Support
-//#define SLICETHERMISTOR //uncomment for Slice Thermistor
-//#define SLICEMAGNUM //uncomment to adjust MMU2S filament laod/unload distances for Slice Magnum
+//======= JTa E3D Revo support
+//#define E3D_REVO_STD  // Standard Revo
+//#define E3D_REVO_HF60 // High Flow Revo with 60W HeaterCore
 
 //---------------------------- Kuo End of defines one normally needs to change ----------------------------
 
@@ -168,7 +166,7 @@
 #ifdef SKELESTRUDER //kuo Skelestruder height
   #if defined(E3D_VOLCANO)
     #define Z_MAX_POS 205
-  #elif defined(E3D_V7)
+  #elif defined(E3D_REVO_STD) || defined (E3D_REVO_HF60) // JTa: Both are same height
     #define Z_MAX_POS 215
   #else
     #define Z_MAX_POS 220
@@ -179,12 +177,15 @@
   #define Z_MAX_POS 205
 #elif defined(E3D_VOLCANO) //kuo Volcano height
   #define Z_MAX_POS 202
-#elif defined(BEAR_EXXA) // JTa BearExxa height
+#elif defined(BEAR_EXXA) // JTa: BearExxa height
   #define Z_MAX_POS 204
 #else
   #define Z_MAX_POS 210 //default height
 #endif
 #define Z_MIN_POS 0.15
+
+// Z height correction value
+#define Z_MAX_POS_XYZ_CALIBRATION_CORRECTION 9
 
 // Canceled home position
 #define X_CANCEL_POS 50
@@ -248,13 +249,13 @@
 #define NORMAL_MAX_FEEDRATE_XY   200  // max feedrate in mm/s
 
 //number of bytes from end of the file to start check
-#define END_FILE_SECTION 20000
+#define END_FILE_SECTION 30720
 
 #define Z_AXIS_ALWAYS_ON 1
 
 //Crash detection
 #define CRASHDET_TIMER 45 //seconds
-#define CRASHDET_COUNTER_MAX 3 
+#define CRASHDET_COUNTER_MAX 3
 
 // New XYZ calibration
 #define NEW_XYZCAL
@@ -284,10 +285,9 @@
 // Filament sensor
 #define FILAMENT_SENSOR
 #define FILAMENT_SENSOR_TYPE FSENSOR_IR_ANALOG
-
 #define FSENSOR_PROBING
 
-// Backlash - 
+// Backlash -
 //#define BACKLASH_X
 //#define BACKLASH_Y
 
@@ -304,7 +304,9 @@
 #define DEBUG_DCODE6
 
 //#define DEBUG_PULLUP_CRASH //Test Pullup crash
+//#define DEBUG_PRINTER_STATES
 
+//#define DEBUG_EEPROM_CHANGES //Uses +1188 bytes Flash +6 bytes SRAM
 //#define DEBUG_BUILD
 //#define DEBUG_SEC_LANG   //secondary language debug output at startup
 //#define DEBUG_XFLASH   //debug external spi flash
@@ -313,15 +315,15 @@
 #define DEBUG_DCODES //D codes
 #define DEBUG_STACK_MONITOR        //Stack monitor in stepper ISR
 //#define DEBUG_CRASHDET_COUNTERS  //Display crash-detection counters on LCD
-//#define DEBUG_RESUME_PRINT       //Resume/save print debug enable 
-//#define DEBUG_UVLO_AUTOMATIC_RECOVER // Power panic automatic recovery debug output 
+//#define DEBUG_RESUME_PRINT       //Resume/save print debug enable
+//#define DEBUG_UVLO_AUTOMATIC_RECOVER // Power panic automatic recovery debug output
 //#define DEBUG_DISABLE_XMINLIMIT  //x min limit ignored
 //#define DEBUG_DISABLE_XMAXLIMIT  //x max limit ignored
 //#define DEBUG_DISABLE_YMINLIMIT  //y min limit ignored
 //#define DEBUG_DISABLE_YMAXLIMIT  //y max limit ignored
 //#define DEBUG_DISABLE_ZMINLIMIT  //z min limit ignored
 //#define DEBUG_DISABLE_ZMAXLIMIT  //z max limit ignored
-#define DEBUG_DISABLE_STARTMSGS //no startup messages 
+#define DEBUG_DISABLE_STARTMSGS //no startup messages
 //#define DEBUG_DISABLE_MINTEMP   //mintemp error ignored
 //#define DEBUG_DISABLE_SWLIMITS  //sw limits ignored
 //#define DEBUG_DISABLE_LCD_STATUS_LINE  //empty four lcd line
@@ -584,11 +586,7 @@
  *------------------------------------*/
 
 // Mintemps
-#ifdef SLICETHERMISTOR //Kuo
-  #define HEATER_0_MINTEMP 5
-#else
-  #define HEATER_0_MINTEMP 10
-#endif //Kuo ===
+#define HEATER_0_MINTEMP 10
 #define HEATER_MINTEMP_DELAY 15000                // [ms] ! if changed, check maximal allowed value @ ShortTimer
 #if HEATER_MINTEMP_DELAY>USHRT_MAX
 #error "Check maximal allowed value @ ShortTimer (see HEATER_MINTEMP_DELAY definition)"
@@ -606,19 +604,28 @@
 // Maxtemps
 #if defined(E3D_PT100_EXTRUDER_WITH_AMP) || defined(E3D_PT100_EXTRUDER_NO_AMP)
 #define HEATER_0_MAXTEMP 410
-#elif defined(SLICETHERMISTOR) //Kuo
-  #define HEATER_0_MAXTEMP 410
 #else
 #define HEATER_0_MAXTEMP 305
 #endif
 #define BED_MAXTEMP 125
-#define AMBIENT_MAXTEMP 100
+#define AMBIENT_MAXTEMP 80
 
 #if defined(E3D_PT100_EXTRUDER_WITH_AMP) || defined(E3D_PT100_EXTRUDER_NO_AMP)
 // Define PID constants for extruder with PT100
 #define  DEFAULT_Kp 21.70
 #define  DEFAULT_Ki 1.60
 #define  DEFAULT_Kd 73.76
+#elif defined (E3D_REVO_STD)
+// Define PID constants for E3D REVO
+#define  DEFAULT_Kp 25.00
+#define  DEFAULT_Ki 4.8
+#define  DEFAULT_Kd 32.6
+#elif defined (E3D_REVO_HF60)
+// Define PID constants for E3D REVO HF 60W
+#define  MAX_OVERSHOOT_PID_AUTOTUNE 30
+#define  DEFAULT_Kp 15.00
+#define  DEFAULT_Ki 2.9
+#define  DEFAULT_Kd 19.2
 #else
 // Define PID constants for extruder
 //#define  DEFAULT_Kp 40.925
@@ -631,6 +638,9 @@
 
 // Extrude mintemp
 #define EXTRUDE_MINTEMP 175
+
+// Quick nozzle change supported
+//#define QUICK_NOZZLE_CHANGE
 
 // Extruder cooling fans
 #define EXTRUDER_0_AUTO_FAN_PIN   8
@@ -653,33 +663,36 @@
 #define FILAMENTCHANGE_YPOS 0
 #define FILAMENTCHANGE_ZADD 2
 #define FILAMENTCHANGE_FIRSTRETRACT -2
+#define FILAMENTCHANGE_FINALRETRACT 0
 
 #ifdef BONDTECH_PRUSA_UPGRADE_MK3 
  #define FILAMENTCHANGE_FIRSTFEED 80 //E distance in mm for fast filament loading sequence used used in filament change (M600)
- #define FILAMENTCHANGE_FINALFEED 25  //Kuo BMG FILAMENTCHANGE_FINALFEED
- #define FILAMENTCHANGE_FINALRETRACT -95
 #elif defined(BONDTECH_PRUSA_UPGRADE_MK3S)
  #define FILAMENTCHANGE_FIRSTFEED 80 //E distance in mm for fast filament loading sequence used used in filament change (M600)
- #define FILAMENTCHANGE_FINALFEED 25  //Kuo BMG FILAMENTCHANGE_FINALFEED
- #define FILAMENTCHANGE_FINALRETRACT -95
 #elif defined(BEAR_EXXA)
  #define FILAMENTCHANGE_FIRSTFEED 75 //E distance in mm for fast filament loading sequence used used in filament change (M600)
- #define FILAMENTCHANGE_FINALFEED 25  //Kuo BMG FILAMENTCHANGE_FINALFEED
- #define FILAMENTCHANGE_FINALRETRACT -90
 #else
  #define FILAMENTCHANGE_FIRSTFEED 70 //E distance in mm for fast filament loading sequence used used in filament change (M600)
- #define FILAMENTCHANGE_FINALFEED 25 //default E distance in mm for slow filament loading sequence used used in filament change (M600) and filament load (M701) 
- #define FILAMENTCHANGE_FINALRETRACT -80
 #endif
+#define FILAMENTCHANGE_FINALFEED 25 //E distance in mm for slow filament loading sequence used used in filament change (M600) and filament load (M701) 
 #define FILAMENTCHANGE_RECFEED 5
 
 #define FILAMENTCHANGE_XYFEED 50
 #define FILAMENTCHANGE_EFEED_FIRST 20 // feedrate in mm/s for fast filament loading sequence used in filament change (M600)
-#define FILAMENTCHANGE_EFEED_FINAL 3.3f // feedrate in mm/s for slow filament loading sequence used in filament change (M600) and filament load (M701) 
+#define FILAMENTCHANGE_EFEED_FINAL 3.3f // feedrate in mm/s for slow filament loading sequence used in filament change (M600) and filament load (M701)
 //#define FILAMENTCHANGE_RFEED 400
 #define FILAMENTCHANGE_RFEED 7000 / 60
 #define FILAMENTCHANGE_EXFEED 2
 #define FILAMENTCHANGE_ZFEED 15
+
+//Retract and then extrude some filament to prevent oozing.
+//After the loading sequence and after a print is canceled, the filament is retracted to get it out of the heat zone of the nozzle.
+//Then a small extrusion is performed to make sure the filament is close enough for the next print without oozing.
+//#define COMMUNITY_PREVENT_OOZE
+#ifdef COMMUNITY_PREVENT_OOZE
+#define FILAMENTCHANGE_COMMUNITY_ROOZEFEED -10 //E retract distance in mm for ooze prevention
+#define FILAMENTCHANGE_COMMUNITY_EOOZEFEED 4 //E extrude distance in mm for ooze prevention
+#endif //End COMMUNITY_PREVENT_OOZE
 
 #endif
 
@@ -713,9 +726,28 @@
 
 #define THERMAL_MODEL_Ta_corr -7     // Default ambient temperature correction
 
+#ifdef E3D_REVO_STD
+#include "thermal_model/e3d_REVO.h"
+#define THERMAL_MODEL_DEFAULT E3D_REVO // Default Revo model parameters
+#elif defined (E3D_REVO_HF60)
+#include "thermal_model/e3d_REVO_HF_60W.h"
+#define THERMAL_MODEL_DEFAULT E3D_REVO_HF_60W // Default E3D REVO HF 60W model parameters
+#else
 #include "thermal_model/e3d_v6.h"
 #define THERMAL_MODEL_DEFAULT E3D_V6 // Default model parameters
+#endif
 
+/*------------------------------------
+ HOST FEATURES
+ *------------------------------------*/
+
+// Uncomment if the host supports '//action:shutdown'. It will add "Shutdown host" to the LCD meun. 
+//#define HOST_SHUTDOWN
+
+// Uncomment if the host doesn't support '//action:ready' & '//action:notready'.
+// This will replace the "Set Ready"/"Set not Ready" LCD menu entry with
+// "Print from host" and send '//action:start' instead.
+//#define REPLACE_SETREADY
 
 /*------------------------------------
  MOTOR CURRENT SETTINGS
@@ -766,9 +798,9 @@
 //
 //#define BED_LIMIT_SWITCHING
 
-// This sets the max power delivered to the bed, and replaces the HEATER_BED_DUTY_CYCLE_DIVIDER option.
+// This sets the max power delivered to the bed.
 // all forms of bed control obey this (PID, bang-bang, bang-bang with hysteresis)
-// setting this to anything other than 255 enables a form of PWM to the bed just like HEATER_BED_DUTY_CYCLE_DIVIDER did,
+// setting this to anything other than 255 enables a form of PWM to the bed,
 // so you shouldn't use it unless you are OK with PWM on your bed.  (see the comment on enabling PIDTEMPBED)
 #define MAX_BED_POWER 255 // limits duty cycle to bed; 255=full current
 
@@ -884,8 +916,6 @@
 #define TEMP_SENSOR_0 247
 #elif defined(E3D_PT100_EXTRUDER_NO_AMP)
 #define TEMP_SENSOR_0 148
-#elif defined(SLICETHERMISTOR) //Kuo Slice
-#define TEMP_SENSOR_0 800 //Kuo ===
 #else
 #define TEMP_SENSOR_0 5
 #endif
@@ -942,7 +972,7 @@
 // "dropsegments" steps long. All the above rules still need to apply.
 #define UVLO_TINY_Z_AXIS_SHIFT 0.16
 // If power panic occured, and the current temperature is higher then target temperature before interrupt minus this offset, print will be recovered automatically.
-#define AUTOMATIC_UVLO_BED_TEMP_OFFSET 5 
+#define AUTOMATIC_UVLO_BED_TEMP_OFFSET 5
 
 #define HEATBED_V2
 
@@ -981,5 +1011,15 @@
        calculated segment length is used. */
 #define DEFAULT_MIN_ARC_SEGMENTS 20 // The enforced minimum segments in a full circle of the same radius.  Set to 0 to disable
 #define DEFAULT_ARC_SEGMENTS_PER_SEC 0 // Use feedrate to choose segment length. Set to 0 to disable
+
+/*------------------------------------
+ COMMUNITY FEATURES
+ *------------------------------------*/
+
+//Show filename instead of print time after SD card print finished
+//#define SHOW_FILENAME_AFTER_FINISH
+
+//Remove the "AutoLoad filament" LCD menu entry if autoload is enabled.
+//#define REMOVE_AUTOLOAD_FILAMENT_MENU_ENTRY
 
 #endif //__CONFIGURATION_PRUSA_H
