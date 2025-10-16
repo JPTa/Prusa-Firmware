@@ -25,6 +25,7 @@ extern const char _sPrinterMmuName[] PROGMEM;
 #define FW_COMMITNR 8225
 //#define FW_FLAVOR RC      //uncomment if DEV, ALPHA, BETA or RC
 //#define FW_FLAVERSION 1     //uncomment if FW_FLAVOR is defined and versioning is needed. Limited to max 8.
+
 #endif
 
 #ifndef FW_FLAVOR
@@ -43,9 +44,6 @@ extern const char _sPrinterMmuName[] PROGMEM;
 #define FW_COMMIT_HASH_LENGTH 1
 #define FW_COMMIT_HASH "0"
 #define FW_REPOSITORY "Unknown"
-#ifndef FW_VERSION_FULL
-#define FW_VERSION_FULL FW_VERSION
-#endif //END FW_VERSION_FULL
 #endif
 
 // G-code language level

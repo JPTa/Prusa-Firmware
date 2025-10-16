@@ -236,6 +236,7 @@ void lcd_init(void)
     lcd_displayfunction |= OLED_FONT_TABLE;
 #endif
 	_delay_us(50000); 
+
 	lcd_begin(1); //first time init
 	fdev_setup_stream(lcdout, lcd_putchar, NULL, _FDEV_SETUP_WRITE); //setup lcdout stream
 }
